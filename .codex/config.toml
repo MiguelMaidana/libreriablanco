@@ -1,0 +1,59 @@
+# TSOFT AI Dev Kit — Codex v2
+# Configuración de subagentes para el proyecto
+# Copiá este archivo a .codex/config.toml en la raíz del proyecto
+
+# --- Raíz del proyecto ------------------------------------------------------
+project_root_markers = [".git", "tsoft-dev/config/celula.json"]
+
+# --- Modelo de la sesión del Orquestador ------------------------------------
+# El Orquestador no diseña ni escribe código: coordina subagentes, lee sus
+# resúmenes cortos y decide el siguiente paso. No necesita el modelo más
+# caro disponible -- eso lo reservan los subagentes que sí razonan sobre
+# arquitectura o código (planificador, desarrollador, qa).
+#
+# Esta clave DEBE ir a nivel raíz, antes de cualquier [seccion] -- si se
+# coloca después de un [agents]/[features], TOML la lee como parte de esa
+# sección y no tiene ningún efecto. Verificado empíricamente con
+# `codex doctor --json` (el campo "model" efectivo cambia solo cuando la
+# clave está antes del primer header de sección).
+model = "gpt-5.4-mini"
+
+# --- Subagentes -------------------------------------------------------------
+[agents]
+
+# Máximo de subagentes corriendo en paralelo. El flujo del orquestador
+# (.codex/skills/orquestador/SKILL.md) invoca un subagente a la vez: es
+# serial a propósito, para que el IA Maker pueda aprobar cada etapa antes
+# de la siguiente. Subir este número no acelera nada hasta que el flujo
+# mismo se rediseñe para paralelizar (ej. Documentador + QA, que no
+# dependen entre sí).
+max_threads = 1
+
+# Profundidad máxima de subagentes anidados.
+max_depth = 1
+
+# --- Capacidades ------------------------------------------------------------
+[features]
+hooks = true
+
+# ---------------------------------------------------------------------------
+# trust_level NO va en este archivo.
+#
+# Va en el config GLOBAL del usuario, que es otro archivo con el mismo
+# nombre:  C:\Users\<tu-usuario>\.codex\config.toml  (Windows)
+#          ~/.codex/config.toml                      (Linux/Mac)
+#
+# El instalador te imprime esa ruta ya resuelta con tu usuario real, para
+# que no tengas que reemplazar nada.
+#
+# Y ahi va dentro de una seccion propia:
+#     [projects.'C:\ruta\a\tu-proyecto']
+#     trust_level = "trusted"
+#
+# Si lo pones aca, Codex no arranca: falla con
+#   "invalid type: string, expected a boolean"
+# porque lo lee como si fuera una capacidad de [features].
+#
+# Lo mas simple es no editar nada: abri Codex en el proyecto y responde
+# "Yes, continue" cuando pregunte si confias en el directorio.
+# ---------------------------------------------------------------------------
