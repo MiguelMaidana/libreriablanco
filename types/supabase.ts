@@ -749,6 +749,15 @@ export type Database = {
       }
     }
     Functions: {
+      get_my_admin_profile: {
+        Args: never
+        Returns: {
+          full_name: string
+          id: string
+          is_active: boolean
+          role_names: string[]
+        }[]
+      }
       has_permission: {
         Args: { p_action: string; p_module: string; p_user_id: string }
         Returns: boolean
