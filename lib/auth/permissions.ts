@@ -29,7 +29,12 @@ export async function getCurrentAdmin(): Promise<AdminProfile | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_my_admin_profile").maybeSingle();
 
-  if (error || !data || !data.is_active) {
+  if (error) {
+    console.error("getCurrentAdmin: error calling get_my_admin_profile", error);
+    return null;
+  }
+
+  if (!data || !data.is_active) {
     return null;
   }
 
@@ -50,11 +55,15 @@ export async function requirePermission(
   }
 
   const supabase = await createClient();
-  const { data: allowed } = await supabase.rpc("has_permission", {
+  const { data: allowed, error } = await supabase.rpc("has_permission", {
     p_user_id: admin.id,
     p_module: module,
     p_action: action,
   });
+
+  if (error) {
+    console.error("requirePermission: error calling has_permission", error);
+  }
 
   if (!allowed) {
     throw new ForbiddenError(module, action);

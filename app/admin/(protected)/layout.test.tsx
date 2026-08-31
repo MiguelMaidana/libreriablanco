@@ -50,9 +50,9 @@ describe("ProtectedAdminLayout", () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: "u1" } } });
     mockGetCurrentAdmin.mockResolvedValue({ id: "u1", fullName: "Test", roles: [] });
 
-    const result = await ProtectedAdminLayout({
-      children: <div data-testid="child" />,
-    });
-    expect(result).toBeTruthy();
+    const marker = <div data-testid="child-marker">contenido protegido</div>;
+    const result = await ProtectedAdminLayout({ children: marker });
+
+    expect(result).toEqual(<>{marker}</>);
   });
 });
