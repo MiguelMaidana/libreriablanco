@@ -1,6 +1,8 @@
 -- Vista pública de productos: nunca expone cost/profit/margin_percent,
 -- y ya filtra por publicado+disponible en su propia definición.
-create view public.public_products as
+create view public.public_products
+with (security_barrier = true)
+as
 select
   id, internal_code, sku, barcode, isbn, name, short_description, full_description,
   brand, publisher, author, category_id, tags, price, sale_price,
@@ -8,6 +10,7 @@ select
 from public.products
 where is_published = true and available = true;
 
+revoke all on public.public_products from anon, authenticated, public;
 grant select on public.public_products to anon, authenticated;
 
 -- Helper SECURITY DEFINER: una política RLS que consulta OTRA tabla
