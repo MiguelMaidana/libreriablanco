@@ -86,7 +86,13 @@ adivinar un nombre mal escrito.
 <!-- Qué hace este proyecto, para qué cliente, cuál es su propósito.
      2-4 oraciones. -->
 
-[Completar]
+Plataforma integral de e-commerce y backoffice para Librería Blanco: un
+portal público sin login para comprar como invitado (retiro en local,
+pago por transferencia + comprobante por WhatsApp) y un backoffice
+administrativo (`/admin`) para gestionar catálogo, precios, pedidos y
+clientes. Única aplicación Next.js full-stack sobre Supabase, desplegada
+en Vercel. Fuente de verdad funcional completa:
+`docs/libreria/LIBRERIA_BLANCO_MASTER_SPEC_v0.4.md`.
 
 ---
 
@@ -100,8 +106,14 @@ adivinar un nombre mal escrito.
      - Tailwind CSS 3.4
 -->
 
-- [tecnología y versión]
-- [tecnología y versión]
+- Next.js 15 (App Router)
+- TypeScript 5 (strict)
+- React 19
+- Tailwind CSS v4 + shadcn/ui
+- Supabase (Postgres, Auth, Storage) vía @supabase/ssr
+- Vitest + Testing Library
+- pnpm
+- Vercel (hosting)
 
 ---
 
@@ -117,7 +129,20 @@ adivinar un nombre mal escrito.
      /src/types        → tipos TypeScript compartidos
 -->
 
-[Completar]
+/app                    → rutas (App Router): portal público en la raíz,
+                           backoffice bajo /admin (desde Fase 2), API
+                           routes bajo /app/api
+/components/ui          → componentes base de shadcn/ui, no editar a mano
+                           salvo necesidad real (regenerar con la CLI)
+/components/store        → componentes específicos del portal público
+                           (desde Fase 3)
+/components/admin        → componentes específicos del backoffice
+                           (desde Fase 2)
+/lib/supabase            → clientes de Supabase (browser y servidor)
+/lib/validations         → esquemas de validación compartidos (desde
+                           Fase 1)
+/types                   → tipos compartidos, incluyendo los generados
+                           por Supabase CLI
 
 ---
 
@@ -135,7 +160,19 @@ adivinar un nombre mal escrito.
      - Tipado: strict mode activo, no usar any
 -->
 
-[Completar]
+- Componentes: PascalCase, un componente por archivo, kebab-case en el
+  nombre de archivo (`product-card.tsx` exporta `ProductCard`).
+- Funciones y utilidades: camelCase, verbos en infinitivo
+  (`getProducts`, `createOrder`).
+- Imports: siempre con el alias `@/*` desde la raíz, nunca relativos de
+  más de un nivel (`../../`).
+- TypeScript estricto activo (`strict: true`,
+  `noUncheckedIndexedAccess: true`); `any` prohibido (regla de ESLint en
+  error, no warning).
+- Todo texto de interfaz en español, corto y sin tecnicismos (spec
+  maestra §103) — ver ejemplos en esa sección antes de escribir copy.
+- Tests co-ubicados junto al archivo que testean
+  (`archivo.ts` + `archivo.test.ts`).
 
 ---
 
@@ -164,7 +201,17 @@ adivinar un nombre mal escrito.
      - Campos de auditoría obligatorios: created_at, updated_at
 -->
 
-[Completar o eliminar esta sección si no aplica]
+- Motor: Postgres vía Supabase, sin ORM — queries con el cliente de
+  `@supabase/ssr` y tipos generados por Supabase CLI.
+- Nombres de tablas: snake_case en plural (`products`, `order_items`).
+- RLS habilitado en toda tabla de negocio; documentar explícitamente qué
+  puede leer el público anónimo y qué requiere sesión de admin.
+- Nunca aceptar precio, total, descuento o stock enviados por el
+  navegador como fuente de verdad — siempre recalcular en servidor (spec
+  maestra §67).
+- `SUPABASE_SERVICE_ROLE_KEY` solo se usa en código de servidor que
+  explícitamente necesita bypassear RLS; nunca en Client Components ni en
+  variables `NEXT_PUBLIC_*`.
 
 ---
 
@@ -178,7 +225,11 @@ adivinar un nombre mal escrito.
      - Mocks: se generan con vi.mock(), no con datos hardcodeados
 -->
 
-[Completar o eliminar esta sección si no aplica]
+- Framework: Vitest + Testing Library (jsdom).
+- Convención de nombres: `[archivo].test.ts` / `.test.tsx`, co-ubicado.
+- Mocks de Supabase: mockear el módulo `@/lib/supabase/server` o
+  `@/lib/supabase/client` con `vi.mock`, nunca pegarle a una base real
+  desde un test automatizado.
 
 ---
 
@@ -195,7 +246,13 @@ adivinar un nombre mal escrito.
 
 - No commitear `tsoft-dev/metrics/` ni `tsoft-dev/reportes/`: contienen los
   prompts, rutas y comandos reales de las sesiones.
-- [Completar con las prohibiciones propias del proyecto]
+- No commitear `.env.local` ni ningún archivo con credenciales reales.
+- No crear una aplicación separada para admin y tienda — es una sola app
+  Next.js (spec maestra §2.1).
+- No implementar stock cuantitativo, Mercado Pago, ARCA ni cuenta de
+  cliente en el MVP — están explícitamente fuera de alcance (spec
+  maestra §68).
+- No exponer `SUPABASE_SERVICE_ROLE_KEY` en código de cliente.
 
 ---
 
