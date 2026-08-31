@@ -106,12 +106,13 @@ en Vercel. Fuente de verdad funcional completa:
      - Tailwind CSS 3.4
 -->
 
-- Next.js 15 (App Router)
-- TypeScript 5 (strict)
+- Next.js 16 (App Router)
+- TypeScript 6 (strict)
 - React 19
 - Tailwind CSS v4 + shadcn/ui
 - Supabase (Postgres, Auth, Storage) vía @supabase/ssr
 - Vitest + Testing Library
+- ESLint 9 (config Next) + Prettier
 - pnpm
 - Vercel (hosting)
 
