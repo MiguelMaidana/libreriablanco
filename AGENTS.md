@@ -36,11 +36,11 @@
 ╚══════════════════════════════════════════════════════════════╝
 -->
 
-# AGENTS.md — [Nombre del proyecto]
+# AGENTS.md — Librería Blanco
 
 > Contexto global del proyecto para el TSOFT AI Dev Kit.
 > Leído por todos los agentes antes de ejecutar cualquier tarea.
-> Última actualización: [fecha]
+> Última actualización: 2026-08-31
 
 ---
 
@@ -188,7 +188,24 @@ en Vercel. Fuente de verdad funcional completa:
      - Cómo se manejan las respuestas de error hacia el cliente
 -->
 
-[Completar]
+En esta fase (Fundaciones) todavía no hay lógica de negocio, así que
+no hay patrones de dominio que documentar. Lo que sí queda establecido
+y debe respetarse en las fases siguientes:
+
+- Server Components por defecto; un componente pasa a Client Component
+  (`"use client"`) solo cuando necesita interactividad o hooks del
+  navegador (ejemplo: `app/error.tsx`).
+- Dos clientes de Supabase separados por contexto de ejecución:
+  `lib/supabase/client.ts` (browser, Client Components) y
+  `lib/supabase/server.ts` (Server Components y Route Handlers, usa
+  cookies de sesión). Nunca mezclar uno con el otro.
+- El servidor nunca muestra un error técnico crudo al usuario — ver
+  `app/error.tsx` y `app/not-found.tsx`. Este patrón se repite a medida
+  que se agreguen Server Actions en fases futuras.
+
+Esta sección se completa con los patrones reales de datos, validación
+y manejo de mutaciones cuando la Fase 1 (modelo de datos + Auth Admin)
+los defina.
 
 ---
 
