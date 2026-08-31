@@ -131,9 +131,6 @@ lib/
     client.ts              # cliente Supabase para browser
     server.ts               # cliente Supabase para Server Components / Route Handlers
 
-types/
-  supabase.ts               # tipos generados por Supabase CLI (placeholder en F0)
-
 .env.local.example
 .env.local                  # no versionado
 ```
