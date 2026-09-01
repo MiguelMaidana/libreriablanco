@@ -1856,7 +1856,7 @@ export function PriceWarningDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>El precio de venta es menor al costo</AlertDialogTitle>
           <AlertDialogDescription>
-            Vas a perder ${Math.abs(lossPerUnit).toFixed(0)} por unidad. ¿Querés guardar igualmente?
+            {`Vas a perder $${Math.abs(lossPerUnit).toFixed(0)} por unidad. ¿Querés guardar igualmente?`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -2041,9 +2041,10 @@ export function ProductForm({ mode, categories, initialValues }: ProductFormProp
             />
           </div>
           <p className="text-sm text-muted-foreground">
-            Ganás por unidad: <span className="font-medium text-foreground">${margin.profit}</span>
+            Ganás por unidad:{" "}
+            <span className="font-medium text-foreground">{`$${margin.profit}`}</span>
             {" — "}Eso representa:{" "}
-            <span className="font-medium text-foreground">{margin.marginPercent}%</span> del precio
+            <span className="font-medium text-foreground">{`${margin.marginPercent}%`}</span> del precio
           </p>
         </section>
 
@@ -3154,7 +3155,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                     )}
                   </TableCell>
                   <TableCell>{product.name}</TableCell>
-                  <TableCell>${product.price}</TableCell>
+                  <TableCell>{`$${product.price}`}</TableCell>
                   <TableCell>
                     <Badge variant={product.is_published ? "default" : "secondary"}>
                       {product.is_published ? "Publicado" : "Borrador"}
