@@ -80,3 +80,19 @@ export async function withPermission<T>(
   const admin = await requirePermission(module, action);
   return fn(admin);
 }
+
+export async function withPermissionAction<S extends { error: string | null }>(
+  module: PermissionModule,
+  action: PermissionAction,
+  forbiddenState: S,
+  fn: (admin: AdminProfile) => Promise<S>,
+): Promise<S> {
+  try {
+    return await withPermission(module, action, fn);
+  } catch (error) {
+    if (error instanceof ForbiddenError) {
+      return forbiddenState;
+    }
+    throw error;
+  }
+}

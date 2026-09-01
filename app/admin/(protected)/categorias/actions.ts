@@ -2,13 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { withPermission } from "@/lib/auth/permissions";
+import { withPermissionAction } from "@/lib/auth/permissions";
 import { categorySchema } from "@/lib/validations/category";
 import { slugify } from "@/lib/utils";
 
 export interface CategoryActionState {
   error: string | null;
 }
+
+const FORBIDDEN_CATEGORY: CategoryActionState = { error: "No tenés permiso para esta acción." };
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -46,7 +48,7 @@ export async function createCategory(
   _prevState: CategoryActionState,
   formData: FormData,
 ): Promise<CategoryActionState> {
-  return withPermission("productos", "crear", async () => {
+  return withPermissionAction("productos", "crear", FORBIDDEN_CATEGORY, async () => {
     const parsed = parseCategoryForm(formData);
     if (!parsed.success) {
       return { error: "Revisá los datos ingresados." };
@@ -77,7 +79,7 @@ export async function updateCategory(
   _prevState: CategoryActionState,
   formData: FormData,
 ): Promise<CategoryActionState> {
-  return withPermission("productos", "editar", async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_CATEGORY, async () => {
     const parsed = parseCategoryForm(formData);
     if (!parsed.success) {
       return { error: "Revisá los datos ingresados." };
@@ -110,7 +112,7 @@ export async function toggleCategoryActive(
   id: string,
   nextIsActive: boolean,
 ): Promise<CategoryActionState> {
-  return withPermission("productos", "editar", async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_CATEGORY, async () => {
     const supabase = await createClient();
     const { error } = await supabase
       .from("categories")

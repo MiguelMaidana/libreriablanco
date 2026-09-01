@@ -28,6 +28,20 @@ function mockAdminAllowed() {
   });
 }
 
+function mockAdminDenied() {
+  mockRpc.mockImplementation((fn: string) => {
+    if (fn === "get_my_admin_profile") {
+      return {
+        maybeSingle: async () => ({
+          data: { id: "u1", full_name: "User", is_active: true, role_names: ["Vendedor"] },
+          error: null,
+        }),
+      };
+    }
+    return Promise.resolve({ data: false, error: null });
+  });
+}
+
 function formData(fields: Record<string, string>): FormData {
   const fd = new FormData();
   for (const [key, value] of Object.entries(fields)) {
@@ -42,6 +56,17 @@ describe("createCategory", () => {
   beforeEach(() => {
     mockRpc.mockReset();
     mockFrom.mockReset();
+  });
+
+  it("devuelve error de permiso cuando el usuario no tiene permiso de crear", async () => {
+    mockAdminDenied();
+
+    const result = await createCategory(
+      { error: null },
+      formData({ name: "Papelería", isFeatured: "on", isActive: "on" }),
+    );
+
+    expect(result.error).toBe("No tenés permiso para esta acción.");
   });
 
   it("devuelve error de validación si falta el nombre", async () => {

@@ -10,7 +10,7 @@ vi.mock("@/lib/supabase/server", () => ({
   })),
 }));
 
-import { getCurrentAdmin, requirePermission, ForbiddenError, withPermission } from "./permissions";
+import { getCurrentAdmin, requirePermission, ForbiddenError, withPermission, withPermissionAction } from "./permissions";
 
 describe("getCurrentAdmin", () => {
   beforeEach(() => {
@@ -173,5 +173,56 @@ describe("withPermission", () => {
 
     await expect(withPermission("productos", "eliminar", fn)).rejects.toThrow(ForbiddenError);
     expect(fn).not.toHaveBeenCalled();
+  });
+});
+
+describe("withPermissionAction", () => {
+  beforeEach(() => {
+    mockRpc.mockReset();
+  });
+
+  it("devuelve forbiddenState cuando el permiso es denegado sin ejecutar fn", async () => {
+    const fn = vi.fn();
+    mockRpc.mockImplementation((rpcFn: string) => {
+      if (rpcFn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Vendedora", is_active: true, role_names: ["Vendedora"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: false, error: null });
+    });
+
+    const forbiddenState = { error: "No tenés permiso." };
+    const result = await withPermissionAction("productos", "eliminar", forbiddenState, fn);
+
+    expect(result).toEqual(forbiddenState);
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it("ejecuta fn y devuelve su resultado cuando el permiso está concedido", async () => {
+    mockRpc.mockImplementation((fn: string) => {
+      if (fn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Admin", is_active: true, role_names: ["SUPER_ADMIN"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: true, error: null });
+    });
+
+    const forbiddenState = { error: "Sin permiso" };
+    const result = await withPermissionAction(
+      "productos",
+      "crear",
+      forbiddenState,
+      async (_admin) => ({ error: null as string | null }),
+    );
+
+    expect(result).toEqual({ error: null });
   });
 });
