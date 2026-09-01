@@ -409,3 +409,9 @@ Click en "Desactivar" en la lista de categorías
   bloqueante para el MVP.
 - Sidebar con más módulos — cada fase agrega su propio ítem al
   construir su pantalla.
+- **Guardia de "salir con cambios sin guardar" (`beforeunload`) en
+  `ProductForm`** — spec maestra §100 y §4.3 de este diseño la pedían;
+  la revisión final de esta fase detectó que el plan de implementación
+  la omitió sin registrar la decisión. Se difiere explícitamente a una
+  pasada de Fase 6 ("Pulido") en vez de improvisar un dirty-check bajo
+  presión de tiempo en el fix wave final de esta fase.
