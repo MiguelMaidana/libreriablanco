@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { MenuIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 interface AdminSidebarProps {
   adminName: string;
@@ -55,6 +55,7 @@ export function AdminSidebar({ adminName }: AdminSidebarProps) {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="flex flex-col justify-between p-4">
+            <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
             <div>
               <NavLinks />
             </div>
