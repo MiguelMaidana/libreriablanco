@@ -196,6 +196,95 @@ export async function withPermission<T>(
 Run: `pnpm vitest run lib/auth/permissions.test.ts`
 Expected: PASS (todos los casos, incluidos los 2 nuevos)
 
+**Addendum (agregado en la revisión de la Tarea 4):** `withPermission`
+lanza `ForbiddenError` en vez de devolverlo — correcto para llamantes
+que quieren que el error se propague, pero ningún Server Action de
+esta fase atrapa esa excepción, así que una administradora sin el
+permiso exacto vería una excepción sin manejar en vez del mensaje de
+negocio esperado. Se agrega `withPermissionAction`, que sí devuelve un
+valor de "denegado" tipado en vez de lanzar, para que cada Server
+Action lo use directamente:
+
+```typescript
+export async function withPermissionAction<S extends { error: string | null }>(
+  module: PermissionModule,
+  action: PermissionAction,
+  forbiddenState: S,
+  fn: (admin: AdminProfile) => Promise<S>,
+): Promise<S> {
+  try {
+    return await withPermission(module, action, fn);
+  } catch (error) {
+    if (error instanceof ForbiddenError) {
+      return forbiddenState;
+    }
+    throw error;
+  }
+}
+```
+
+Agregar también su test en `lib/auth/permissions.test.ts`:
+
+```typescript
+describe("withPermissionAction", () => {
+  beforeEach(() => {
+    mockRpc.mockReset();
+  });
+
+  it("devuelve forbiddenState en vez de lanzar cuando el permiso es denegado", async () => {
+    mockRpc.mockImplementation((fn: string) => {
+      if (fn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Vendedora", is_active: true, role_names: ["Vendedora"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: false, error: null });
+    });
+
+    const fn = vi.fn();
+    const result = await withPermissionAction(
+      "productos",
+      "eliminar",
+      { error: "No tenés permiso para esta acción." },
+      fn,
+    );
+
+    expect(result).toEqual({ error: "No tenés permiso para esta acción." });
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it("ejecuta la función y devuelve su resultado cuando el permiso está concedido", async () => {
+    mockRpc.mockImplementation((fn: string) => {
+      if (fn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Admin", is_active: true, role_names: ["SUPER_ADMIN"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: true, error: null });
+    });
+
+    const result = await withPermissionAction(
+      "productos",
+      "crear",
+      { error: "denegado" },
+      async () => ({ error: null }),
+    );
+
+    expect(result).toEqual({ error: null });
+  });
+});
+```
+
+Este addendum se ejecuta como parte del fix round de la Tarea 3
+(ver ledger) — Tasks 7 y 9 de este plan ya están escritas para usar
+`withPermissionAction` directamente, no `withPermission`.
+
 - [ ] **Step 9: Agregar los componentes de shadcn/ui faltantes**
 
 Run: `pnpm dlx shadcn@latest add accordion alert-dialog textarea label`
@@ -513,13 +602,15 @@ Expected: FAIL — `./actions` no existe.
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { withPermission } from "@/lib/auth/permissions";
+import { withPermissionAction } from "@/lib/auth/permissions";
 import { categorySchema } from "@/lib/validations/category";
 import { slugify } from "@/lib/utils";
 
 export interface CategoryActionState {
   error: string | null;
 }
+
+const FORBIDDEN_CATEGORY: CategoryActionState = { error: "No tenés permiso para esta acción." };
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -557,7 +648,7 @@ export async function createCategory(
   _prevState: CategoryActionState,
   formData: FormData,
 ): Promise<CategoryActionState> {
-  return withPermission("productos", "crear", async () => {
+  return withPermissionAction("productos", "crear", FORBIDDEN_CATEGORY, async () => {
     const parsed = parseCategoryForm(formData);
     if (!parsed.success) {
       return { error: "Revisá los datos ingresados." };
@@ -588,7 +679,7 @@ export async function updateCategory(
   _prevState: CategoryActionState,
   formData: FormData,
 ): Promise<CategoryActionState> {
-  return withPermission("productos", "editar", async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_CATEGORY, async () => {
     const parsed = parseCategoryForm(formData);
     if (!parsed.success) {
       return { error: "Revisá los datos ingresados." };
@@ -621,7 +712,7 @@ export async function toggleCategoryActive(
   id: string,
   nextIsActive: boolean,
 ): Promise<CategoryActionState> {
-  return withPermission("productos", "editar", async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_CATEGORY, async () => {
     const supabase = await createClient();
     const { error } = await supabase
       .from("categories")
@@ -1540,6 +1631,24 @@ describe("toggles de producto", () => {
     expect(result.error).toBeNull();
     expect(update).toHaveBeenCalledWith({ is_featured: true });
   });
+
+  it("devuelve un error de negocio (no lanza) cuando el permiso es denegado", async () => {
+    mockRpc.mockImplementation((fn: string) => {
+      if (fn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Vendedora", is_active: true, role_names: ["Vendedora"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: false, error: null });
+    });
+
+    const result = await toggleProductAvailability("prod-1", false);
+
+    expect(result.error).toBe("No tenés permiso para esta acción.");
+  });
 });
 ```
 
@@ -1555,7 +1664,7 @@ Expected: FAIL — `./actions` no existe.
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { withPermission } from "@/lib/auth/permissions";
+import { withPermissionAction } from "@/lib/auth/permissions";
 import { productSchema } from "@/lib/validations/product";
 
 export interface ProductActionState {
@@ -1609,27 +1718,32 @@ export async function createProduct(
   _prevState: ProductActionState,
   formData: FormData,
 ): Promise<ProductActionState> {
-  return withPermission("productos", "crear", async (admin) => {
-    const parsed = parseProductForm(formData);
-    if (!parsed.success) {
-      return { error: "Revisá los datos ingresados.", productId: null };
-    }
+  return withPermissionAction(
+    "productos",
+    "crear",
+    { error: "No tenés permiso para esta acción.", productId: null },
+    async (admin) => {
+      const parsed = parseProductForm(formData);
+      if (!parsed.success) {
+        return { error: "Revisá los datos ingresados.", productId: null };
+      }
 
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("products")
-      .insert({ ...toRow(parsed.data), updated_by: admin.id })
-      .select("id")
-      .single();
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("products")
+        .insert({ ...toRow(parsed.data), updated_by: admin.id })
+        .select("id")
+        .single();
 
-    if (error || !data) {
-      console.error("createProduct: error inserting product", error);
-      return { error: "No pudimos guardar el producto.", productId: null };
-    }
+      if (error || !data) {
+        console.error("createProduct: error inserting product", error);
+        return { error: "No pudimos guardar el producto.", productId: null };
+      }
 
-    revalidatePath("/admin/productos");
-    return { error: null, productId: data.id };
-  });
+      revalidatePath("/admin/productos");
+      return { error: null, productId: data.id };
+    },
+  );
 }
 
 export async function updateProduct(
@@ -1637,38 +1751,45 @@ export async function updateProduct(
   _prevState: ProductActionState,
   formData: FormData,
 ): Promise<ProductActionState> {
-  return withPermission("productos", "editar", async (admin) => {
-    const parsed = parseProductForm(formData);
-    if (!parsed.success) {
-      return { error: "Revisá los datos ingresados.", productId: id };
-    }
+  return withPermissionAction(
+    "productos",
+    "editar",
+    { error: "No tenés permiso para esta acción.", productId: id },
+    async (admin) => {
+      const parsed = parseProductForm(formData);
+      if (!parsed.success) {
+        return { error: "Revisá los datos ingresados.", productId: id };
+      }
 
-    const supabase = await createClient();
-    const { error } = await supabase
-      .from("products")
-      .update({ ...toRow(parsed.data), updated_by: admin.id })
-      .eq("id", id);
+      const supabase = await createClient();
+      const { error } = await supabase
+        .from("products")
+        .update({ ...toRow(parsed.data), updated_by: admin.id })
+        .eq("id", id);
 
-    if (error) {
-      console.error("updateProduct: error updating product", error);
-      return { error: "No pudimos guardar el producto.", productId: id };
-    }
+      if (error) {
+        console.error("updateProduct: error updating product", error);
+        return { error: "No pudimos guardar el producto.", productId: id };
+      }
 
-    revalidatePath("/admin/productos");
-    revalidatePath(`/admin/productos/${id}`);
-    return { error: null, productId: id };
-  });
+      revalidatePath("/admin/productos");
+      revalidatePath(`/admin/productos/${id}`);
+      return { error: null, productId: id };
+    },
+  );
 }
 
 interface ToggleResult {
   error: string | null;
 }
 
+const FORBIDDEN_TOGGLE: ToggleResult = { error: "No tenés permiso para esta acción." };
+
 export async function toggleProductAvailability(
   id: string,
   nextAvailable: boolean,
 ): Promise<ToggleResult> {
-  return withPermission("productos", "editar", async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_TOGGLE, async () => {
     const supabase = await createClient();
     const { error } = await supabase
       .from("products")
@@ -1689,7 +1810,7 @@ export async function toggleProductPublished(
   id: string,
   nextPublished: boolean,
 ): Promise<ToggleResult> {
-  return withPermission("productos", "editar", async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_TOGGLE, async () => {
     const supabase = await createClient();
     const { error } = await supabase
       .from("products")
@@ -1710,7 +1831,7 @@ export async function toggleProductFeatured(
   id: string,
   nextFeatured: boolean,
 ): Promise<ToggleResult> {
-  return withPermission("productos", "editar", async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_TOGGLE, async () => {
     const supabase = await createClient();
     const { error } = await supabase
       .from("products")
@@ -2396,7 +2517,7 @@ Expected: FAIL — `./image-actions` no existe.
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { withPermission } from "@/lib/auth/permissions";
+import { withPermissionAction } from "@/lib/auth/permissions";
 
 const MAX_IMAGES_PER_PRODUCT = 4;
 const BUCKET = "product-images";
@@ -2405,12 +2526,14 @@ export interface ImageActionState {
   error: string | null;
 }
 
+const FORBIDDEN_IMAGE: ImageActionState = { error: "No tenés permiso para esta acción." };
+
 export async function uploadProductImage(
   productId: string,
   _prevState: ImageActionState,
   formData: FormData,
 ): Promise<ImageActionState> {
-  return withPermission("productos", "editar", async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_IMAGE, async () => {
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0) {
       return { error: "Elegí una imagen para subir." };
@@ -2466,7 +2589,7 @@ export async function deleteProductImage(
   imageId: string,
   productId: string,
 ): Promise<ImageActionState> {
-  return withPermission("productos", "editar", async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_IMAGE, async () => {
     const supabase = await createClient();
 
     const { data: image, error: fetchError } = await supabase
@@ -2504,7 +2627,7 @@ export async function setPrimaryProductImage(
   productId: string,
   imageId: string,
 ): Promise<ImageActionState> {
-  return withPermission("productos", "editar", async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_IMAGE, async () => {
     const supabase = await createClient();
 
     const { error: clearError } = await supabase
@@ -2537,7 +2660,7 @@ export async function reorderProductImage(
   imageId: string,
   direction: "up" | "down",
 ): Promise<ImageActionState> {
-  return withPermission("productos", "editar", async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_IMAGE, async () => {
     const supabase = await createClient();
 
     const { data: images, error } = await supabase
