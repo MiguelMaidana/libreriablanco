@@ -35,6 +35,7 @@ const initialState: CategoryActionState = { error: null };
 
 export function CategoryDialog({ trigger, category }: CategoryDialogProps) {
   const [open, setOpen] = useState(false);
+  const [displayError, setDisplayError] = useState<string | null>(null);
   const isEdit = Boolean(category);
   const submittedRef = useRef(false);
 
@@ -52,12 +53,22 @@ export function CategoryDialog({ trigger, category }: CategoryDialogProps) {
       // handler to run this from since useActionState resolves asynchronously.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpen(false);
+      setDisplayError(null);
       submittedRef.current = false;
+    } else {
+      setDisplayError(state.error);
     }
   }, [state, pending, isEdit]);
 
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) {
+      setDisplayError(null);
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -82,7 +93,7 @@ export function CategoryDialog({ trigger, category }: CategoryDialogProps) {
             <Label htmlFor="isActive">Activa</Label>
             <Switch id="isActive" name="isActive" defaultChecked={category?.isActive ?? true} />
           </div>
-          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+          {displayError && <p className="text-sm text-destructive">{displayError}</p>}
           <Button type="submit" disabled={pending}>
             {pending ? "Guardando..." : "Guardar categoría"}
           </Button>
