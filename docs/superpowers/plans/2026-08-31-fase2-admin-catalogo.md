@@ -1277,7 +1277,6 @@ const validInput = {
   shortDescription: "",
   cost: "1000",
   price: "1500",
-  salePrice: "",
   available: true,
   isPublished: true,
   isFeatured: false,
@@ -1346,10 +1345,6 @@ export const productSchema = z.object({
   shortDescription: optionalText,
   cost: z.coerce.number().nonnegative("El costo no puede ser negativo."),
   price: z.coerce.number().nonnegative("El precio no puede ser negativo."),
-  salePrice: z
-    .union([z.literal(""), z.coerce.number().nonnegative()])
-    .optional()
-    .transform((value) => (value === "" || value === undefined ? null : value)),
   available: z.boolean(),
   isPublished: z.boolean(),
   isFeatured: z.boolean(),
@@ -1373,6 +1368,11 @@ export const productSchema = z.object({
 
 export type ProductInput = z.infer<typeof productSchema>;
 ```
+
+`products.sale_price` no forma parte de este schema ni del formulario
+de esta fase (el diseño §4.3 no incluye un campo de precio
+promocional) — la columna queda en su default `null` a nivel de base,
+sin que ningún código de esta fase la toque.
 
 - [ ] **Step 8: Correr el test y verificar que pasa**
 
@@ -1570,7 +1570,6 @@ function parseProductForm(formData: FormData) {
     shortDescription: formData.get("shortDescription"),
     cost: formData.get("cost"),
     price: formData.get("price"),
-    salePrice: formData.get("salePrice"),
     available: formData.get("available") === "on",
     isPublished: formData.get("isPublished") === "on",
     isFeatured: formData.get("isFeatured") === "on",
@@ -1592,7 +1591,6 @@ function toRow(input: ReturnType<typeof productSchema.parse>) {
     short_description: input.shortDescription,
     cost: input.cost,
     price: input.price,
-    sale_price: input.salePrice,
     available: input.available,
     is_published: input.isPublished,
     is_featured: input.isFeatured,
@@ -1917,7 +1915,6 @@ interface ProductFormValues {
   shortDescription?: string;
   cost?: number;
   price?: number;
-  salePrice?: number | null;
   available?: boolean;
   isPublished?: boolean;
   isFeatured?: boolean;
@@ -2205,7 +2202,6 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
           shortDescription: product.short_description ?? undefined,
           cost: product.cost,
           price: product.price,
-          salePrice: product.sale_price,
           available: product.available,
           isPublished: product.is_published,
           isFeatured: product.is_featured,
