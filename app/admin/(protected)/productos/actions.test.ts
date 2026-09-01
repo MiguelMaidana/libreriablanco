@@ -89,6 +89,20 @@ describe("createProduct", () => {
       }),
     );
   });
+
+  it("rechaza un costo en blanco en vez de guardarlo como 0", async () => {
+    mockAdminAllowed();
+    const insert = vi.fn();
+    mockFrom.mockReturnValue({ insert });
+
+    const result = await createProduct(
+      { error: null, productId: null },
+      formData({ ...validFields, cost: "" }),
+    );
+
+    expect(result.error).not.toBeNull();
+    expect(insert).not.toHaveBeenCalled();
+  });
 });
 
 describe("toggles de producto", () => {

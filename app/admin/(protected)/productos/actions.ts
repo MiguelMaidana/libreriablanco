@@ -12,13 +12,21 @@ export interface ProductActionState {
 
 function parseProductForm(formData: FormData) {
   const getValue = (key: string) => formData.get(key) ?? undefined;
+  // cost/price must fail validation when left blank — z.coerce.number()
+  // treats "" as 0 (Number("") === 0), so an empty string has to become
+  // undefined here, same as a missing key, to trigger the "required"
+  // failure instead of silently saving a zero cost/price.
+  const getNumericValue = (key: string) => {
+    const value = formData.get(key);
+    return value === null || value === "" ? undefined : value;
+  };
 
   return productSchema.safeParse({
     name: getValue("name"),
     categoryId: getValue("categoryId"),
     shortDescription: getValue("shortDescription"),
-    cost: getValue("cost"),
-    price: getValue("price"),
+    cost: getNumericValue("cost"),
+    price: getNumericValue("price"),
     available: formData.get("available") === "on",
     isPublished: formData.get("isPublished") === "on",
     isFeatured: formData.get("isFeatured") === "on",
