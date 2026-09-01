@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import type { ShopProduct } from "@/lib/shop/products";
+import { formatPrice } from "@/lib/shop/format";
 
 interface ProductCardProps {
   product: ShopProduct;
@@ -23,7 +24,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </div>
       <p className="line-clamp-2 text-sm font-medium">{product.name}</p>
-      <p className="text-lg font-semibold text-primary">{`$${product.price}`}</p>
+      <p className="text-lg font-semibold text-primary">{formatPrice(product.price)}</p>
     </Link>
   );
 }

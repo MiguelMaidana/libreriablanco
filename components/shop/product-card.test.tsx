@@ -14,10 +14,10 @@ const baseProduct: ShopProduct = {
 } as ShopProduct;
 
 describe("ProductCard", () => {
-  it("muestra el nombre y el precio real (no texto literal '${...}')", () => {
+  it("muestra el nombre y el precio formateado (no texto literal '${...}')", () => {
     render(<ProductCard product={baseProduct} />);
     expect(screen.getByText("Cuaderno A4")).toBeInTheDocument();
-    expect(screen.getByText("$1500")).toBeInTheDocument();
+    expect(screen.getByText(/\$\s*1\.500/)).toBeInTheDocument();
   });
 
   it("enlaza a /productos/[slug]", () => {

@@ -1,9 +1,14 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/supabase";
 
 export type Settings = Database["public"]["Tables"]["settings"]["Row"];
 
-export async function getSettings(): Promise<Settings | null> {
+// cache() deduplica la consulta dentro del mismo request — el layout del
+// shop y la página que se está renderizando (Home, ficha de producto)
+// llaman a getSettings() por separado; sin esto, cada request hacía dos
+// round-trips idénticos a Supabase.
+export const getSettings = cache(async (): Promise<Settings | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase.from("settings").select("*").eq("id", 1).maybeSingle();
 
@@ -13,4 +18,4 @@ export async function getSettings(): Promise<Settings | null> {
   }
 
   return data;
-}
+});

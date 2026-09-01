@@ -1,10 +1,12 @@
 import { cache } from "react";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { attachPrimaryImages } from "@/lib/shop/products";
 import { buildWhatsAppUrl, buildProductInquiryMessage } from "@/lib/shop/whatsapp";
 import { getSettings } from "@/lib/shop/settings";
+import { formatPrice } from "@/lib/shop/format";
 import { ProductGallery } from "@/components/shop/product-gallery";
 import { ProductCard } from "@/components/shop/product-card";
 import { Button } from "@/components/ui/button";
@@ -64,7 +66,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const relatedWithImages = await attachPrimaryImages(supabase, related ?? []);
 
-  const productUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/productos/${slug}`;
+  // El origen se deriva de los headers del request (host + proto) en vez
+  // de depender de una env var — evita que el link de WhatsApp quede roto
+  // (ruta relativa) si esa variable nunca se configura en producción.
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("host") ?? "libreriablanco.vercel.app";
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
+  const productUrl = `${protocol}://${host}/productos/${slug}`;
   const whatsappMessage = buildProductInquiryMessage(product.name ?? "este producto", productUrl);
 
   return (
@@ -73,7 +81,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <ProductGallery images={(images ?? []).map((img) => img.url)} alt={product.name ?? ""} />
         <div className="flex flex-col gap-4">
           <h1 className="text-2xl font-semibold">{product.name}</h1>
-          <p className="text-2xl font-bold text-primary">{`$${product.price}`}</p>
+          <p className="text-2xl font-bold text-primary">{formatPrice(product.price)}</p>
           <p className={product.available ? "text-green-600" : "text-destructive"}>
             {product.available ? "Disponible" : "No disponible"}
           </p>

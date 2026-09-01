@@ -21,7 +21,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     .eq("is_active", true)
     .order("name", { ascending: true });
 
+  // Si viene ?categoria= pero el slug no resuelve a una categoría activa
+  // (typo, o se desactivó), no hay que mostrar el catálogo completo sin
+  // avisar — eso se ve como un bug para quien filtró. Se corta la consulta
+  // y se cae directo al estado vacío.
   let categoryId: string | null = null;
+  let categoryNotFound = false;
   if (categoria) {
     const { data: category } = await supabase
       .from("categories")
@@ -29,32 +34,40 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       .eq("slug", categoria)
       .eq("is_active", true)
       .maybeSingle();
-    categoryId = category?.id ?? null;
+    if (category) {
+      categoryId = category.id;
+    } else {
+      categoryNotFound = true;
+    }
   }
 
-  let query = supabase.from("public_products").select("*");
+  let productsWithImages: Awaited<ReturnType<typeof attachPrimaryImages>> = [];
 
-  if (q) {
-    query = query.ilike("name", `%${q}%`);
-  }
-  if (categoryId) {
-    query = query.eq("category_id", categoryId);
-  }
-  if (sort === "precio_asc") {
-    query = query.order("price", { ascending: true });
-  } else if (sort === "precio_desc") {
-    query = query.order("price", { ascending: false });
-  } else {
-    query = query.order("created_at", { ascending: false });
-  }
+  if (!categoryNotFound) {
+    let query = supabase.from("public_products").select("*");
 
-  const { data: products, error } = await query;
+    if (q) {
+      query = query.ilike("name", `%${q}%`);
+    }
+    if (categoryId) {
+      query = query.eq("category_id", categoryId);
+    }
+    if (sort === "precio_asc") {
+      query = query.order("price", { ascending: true });
+    } else if (sort === "precio_desc") {
+      query = query.order("price", { ascending: false });
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
 
-  if (error) {
-    console.error("ProductsPage: error fetching products", error);
+    const { data: products, error } = await query;
+
+    if (error) {
+      console.error("ProductsPage: error fetching products", error);
+    }
+
+    productsWithImages = await attachPrimaryImages(supabase, products ?? []);
   }
-
-  const productsWithImages = await attachPrimaryImages(supabase, products ?? []);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
