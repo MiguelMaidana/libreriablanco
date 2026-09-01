@@ -64,7 +64,7 @@ describe("createProduct", () => {
       formData({ ...validFields, categoryId: "" }),
     );
 
-    expect(result.error).toBe("Revisá los datos ingresados.");
+    expect(result.error).toBe("Elegí una categoría.");
     expect(result.productId).toBeNull();
   });
 
@@ -106,7 +106,7 @@ describe("toggles de producto", () => {
     const result = await toggleProductAvailability("prod-1", false);
 
     expect(result.error).toBeNull();
-    expect(update).toHaveBeenCalledWith({ available: false });
+    expect(update).toHaveBeenCalledWith({ available: false, updated_by: "u1" });
   });
 
   it("toggleProductPublished actualiza is_published", async () => {
@@ -118,7 +118,7 @@ describe("toggles de producto", () => {
     const result = await toggleProductPublished("prod-1", true);
 
     expect(result.error).toBeNull();
-    expect(update).toHaveBeenCalledWith({ is_published: true });
+    expect(update).toHaveBeenCalledWith({ is_published: true, updated_by: "u1" });
   });
 
   it("toggleProductFeatured actualiza is_featured", async () => {
@@ -130,7 +130,7 @@ describe("toggles de producto", () => {
     const result = await toggleProductFeatured("prod-1", true);
 
     expect(result.error).toBeNull();
-    expect(update).toHaveBeenCalledWith({ is_featured: true });
+    expect(update).toHaveBeenCalledWith({ is_featured: true, updated_by: "u1" });
   });
 
   it("devuelve un error de negocio (no lanza) cuando el permiso es denegado", async () => {

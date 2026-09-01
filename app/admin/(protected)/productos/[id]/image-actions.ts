@@ -6,6 +6,8 @@ import { withPermissionAction } from "@/lib/auth/permissions";
 
 const MAX_IMAGES_PER_PRODUCT = 4;
 const BUCKET = "product-images";
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
 export interface ImageActionState {
   error: string | null;
@@ -22,6 +24,14 @@ export async function uploadProductImage(
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0) {
       return { error: "Elegí una imagen para subir." };
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      return { error: "Solo se aceptan imágenes JPG, PNG, WEBP o AVIF." };
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return { error: "La imagen no puede pesar más de 5MB." };
     }
 
     const supabase = await createClient();
@@ -101,6 +111,39 @@ export async function deleteProductImage(
     if (deleteError) {
       console.error("deleteProductImage: error deleting row", deleteError);
       return { error: "No pudimos eliminar la imagen." };
+    }
+
+    const { data: remaining, error: remainingError } = await supabase
+      .from("product_images")
+      .select("id, is_primary")
+      .eq("product_id", productId)
+      .order("position", { ascending: true });
+
+    if (remainingError) {
+      console.error("deleteProductImage: error fetching remaining images", remainingError);
+      revalidatePath(`/admin/productos/${productId}`);
+      return { error: null };
+    }
+
+    if (remaining && remaining.length > 0) {
+      const hasPrimary = remaining.some((image) => image.is_primary);
+
+      for (let index = 0; index < remaining.length; index += 1) {
+        const image = remaining[index]!;
+        const updates: { position: number; is_primary?: boolean } = { position: index };
+        if (index === 0 && !hasPrimary) {
+          updates.is_primary = true;
+        }
+
+        const { error: updateError } = await supabase
+          .from("product_images")
+          .update(updates)
+          .eq("id", image.id);
+
+        if (updateError) {
+          console.error("deleteProductImage: error updating remaining image", updateError);
+        }
+      }
     }
 
     revalidatePath(`/admin/productos/${productId}`);

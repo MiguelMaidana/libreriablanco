@@ -11,7 +11,7 @@ export interface ProductActionState {
 }
 
 function parseProductForm(formData: FormData) {
-  const getValue = (key: string) => formData.get(key) || undefined;
+  const getValue = (key: string) => formData.get(key) ?? undefined;
 
   return productSchema.safeParse({
     name: getValue("name"),
@@ -65,7 +65,10 @@ export async function createProduct(
     async (admin) => {
       const parsed = parseProductForm(formData);
       if (!parsed.success) {
-        return { error: "Revisá los datos ingresados.", productId: null };
+        return {
+          error: parsed.error.issues[0]?.message ?? "Revisá los datos ingresados.",
+          productId: null,
+        };
       }
 
       const supabase = await createClient();
@@ -98,7 +101,10 @@ export async function updateProduct(
     async (admin) => {
       const parsed = parseProductForm(formData);
       if (!parsed.success) {
-        return { error: "Revisá los datos ingresados.", productId: id };
+        return {
+          error: parsed.error.issues[0]?.message ?? "Revisá los datos ingresados.",
+          productId: id,
+        };
       }
 
       const supabase = await createClient();
@@ -129,11 +135,11 @@ export async function toggleProductAvailability(
   id: string,
   nextAvailable: boolean,
 ): Promise<ToggleResult> {
-  return withPermissionAction("productos", "editar", FORBIDDEN_TOGGLE, async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_TOGGLE, async (admin) => {
     const supabase = await createClient();
     const { error } = await supabase
       .from("products")
-      .update({ available: nextAvailable })
+      .update({ available: nextAvailable, updated_by: admin.id })
       .eq("id", id);
 
     if (error) {
@@ -150,11 +156,11 @@ export async function toggleProductPublished(
   id: string,
   nextPublished: boolean,
 ): Promise<ToggleResult> {
-  return withPermissionAction("productos", "editar", FORBIDDEN_TOGGLE, async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_TOGGLE, async (admin) => {
     const supabase = await createClient();
     const { error } = await supabase
       .from("products")
-      .update({ is_published: nextPublished })
+      .update({ is_published: nextPublished, updated_by: admin.id })
       .eq("id", id);
 
     if (error) {
@@ -171,11 +177,11 @@ export async function toggleProductFeatured(
   id: string,
   nextFeatured: boolean,
 ): Promise<ToggleResult> {
-  return withPermissionAction("productos", "editar", FORBIDDEN_TOGGLE, async () => {
+  return withPermissionAction("productos", "editar", FORBIDDEN_TOGGLE, async (admin) => {
     const supabase = await createClient();
     const { error } = await supabase
       .from("products")
-      .update({ is_featured: nextFeatured })
+      .update({ is_featured: nextFeatured, updated_by: admin.id })
       .eq("id", id);
 
     if (error) {
