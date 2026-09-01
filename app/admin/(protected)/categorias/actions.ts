@@ -5,36 +5,13 @@ import { createClient } from "@/lib/supabase/server";
 import { withPermissionAction } from "@/lib/auth/permissions";
 import { categorySchema } from "@/lib/validations/category";
 import { slugify } from "@/lib/utils";
+import { uniqueSlug } from "@/lib/slug";
 
 export interface CategoryActionState {
   error: string | null;
 }
 
 const FORBIDDEN_CATEGORY: CategoryActionState = { error: "No tenés permiso para esta acción." };
-
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
-
-async function uniqueSlug(
-  supabase: SupabaseClient,
-  base: string,
-  excludeId?: string,
-): Promise<string> {
-  let candidate = base;
-  let suffix = 2;
-
-  for (;;) {
-    let query = supabase.from("categories").select("id").eq("slug", candidate);
-    if (excludeId) {
-      query = query.neq("id", excludeId);
-    }
-    const { data } = await query.maybeSingle();
-    if (!data) {
-      return candidate;
-    }
-    candidate = `${base}-${suffix}`;
-    suffix += 1;
-  }
-}
 
 function parseCategoryForm(formData: FormData) {
   return categorySchema.safeParse({
@@ -55,7 +32,7 @@ export async function createCategory(
     }
 
     const supabase = await createClient();
-    const slug = await uniqueSlug(supabase, slugify(parsed.data.name));
+    const slug = await uniqueSlug(supabase, "categories", slugify(parsed.data.name));
 
     const { error } = await supabase.from("categories").insert({
       name: parsed.data.name,
@@ -86,7 +63,7 @@ export async function updateCategory(
     }
 
     const supabase = await createClient();
-    const slug = await uniqueSlug(supabase, slugify(parsed.data.name), id);
+    const slug = await uniqueSlug(supabase, "categories", slugify(parsed.data.name), id);
 
     const { error } = await supabase
       .from("categories")

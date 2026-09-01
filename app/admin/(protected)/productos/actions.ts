@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { withPermissionAction } from "@/lib/auth/permissions";
 import { productSchema } from "@/lib/validations/product";
+import { slugify } from "@/lib/utils";
+import { uniqueSlug } from "@/lib/slug";
 
 export interface ProductActionState {
   error: string | null;
@@ -80,9 +82,10 @@ export async function createProduct(
       }
 
       const supabase = await createClient();
+      const slug = await uniqueSlug(supabase, "products", slugify(parsed.data.name));
       const { data, error } = await supabase
         .from("products")
-        .insert({ ...toRow(parsed.data), updated_by: admin.id })
+        .insert({ ...toRow(parsed.data), slug, updated_by: admin.id })
         .select("id")
         .single();
 
@@ -116,9 +119,10 @@ export async function updateProduct(
       }
 
       const supabase = await createClient();
+      const slug = await uniqueSlug(supabase, "products", slugify(parsed.data.name), id);
       const { error } = await supabase
         .from("products")
-        .update({ ...toRow(parsed.data), updated_by: admin.id })
+        .update({ ...toRow(parsed.data), slug, updated_by: admin.id })
         .eq("id", id);
 
       if (error) {

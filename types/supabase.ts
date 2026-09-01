@@ -450,6 +450,7 @@ export type Database = {
           sale_price: number | null
           short_description: string | null
           sku: string | null
+          slug: string | null
           tags: string[] | null
           updated_at: string
           updated_by: string | null
@@ -478,6 +479,7 @@ export type Database = {
           sale_price?: number | null
           short_description?: string | null
           sku?: string | null
+          slug?: string | null
           tags?: string[] | null
           updated_at?: string
           updated_by?: string | null
@@ -506,6 +508,7 @@ export type Database = {
           sale_price?: number | null
           short_description?: string | null
           sku?: string | null
+          slug?: string | null
           tags?: string[] | null
           updated_at?: string
           updated_by?: string | null
@@ -689,6 +692,7 @@ export type Database = {
           sale_price: number | null
           short_description: string | null
           sku: string | null
+          slug: string | null
           tags: string[] | null
         }
         Insert: {
@@ -712,6 +716,7 @@ export type Database = {
           sale_price?: number | null
           short_description?: string | null
           sku?: string | null
+          slug?: string | null
           tags?: string[] | null
         }
         Update: {
@@ -735,6 +740,7 @@ export type Database = {
           sale_price?: number | null
           short_description?: string | null
           sku?: string | null
+          slug?: string | null
           tags?: string[] | null
         }
         Relationships: [

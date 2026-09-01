@@ -71,10 +71,15 @@ describe("createProduct", () => {
   it("inserta el producto con los campos mapeados a snake_case", async () => {
     mockAdminAllowed();
 
+    const selectChain = {
+      eq: vi.fn().mockReturnThis(),
+      neq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    };
     const single = vi.fn().mockResolvedValue({ data: { id: "prod-1" }, error: null });
-    const select = vi.fn().mockReturnValue({ single });
-    const insert = vi.fn().mockReturnValue({ select });
-    mockFrom.mockReturnValue({ insert });
+    const insertSelect = vi.fn().mockReturnValue({ single });
+    const insert = vi.fn().mockReturnValue({ select: insertSelect });
+    mockFrom.mockReturnValue({ select: vi.fn().mockReturnValue(selectChain), insert });
 
     const result = await createProduct({ error: null, productId: null }, formData(validFields));
 
@@ -102,6 +107,28 @@ describe("createProduct", () => {
 
     expect(result.error).not.toBeNull();
     expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("genera un slug a partir del nombre", async () => {
+    mockAdminAllowed();
+
+    const selectChain = {
+      eq: vi.fn().mockReturnThis(),
+      neq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    };
+    const single = vi.fn().mockResolvedValue({ data: { id: "prod-1" }, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const insert = vi.fn().mockReturnValue({ select });
+    mockFrom.mockImplementation((table: string) =>
+      table === "products" ? { select: vi.fn().mockReturnValue(selectChain), insert } : { select: vi.fn().mockReturnValue(selectChain) },
+    );
+
+    await createProduct({ error: null, productId: null }, formData(validFields));
+
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "cuaderno-rivadavia-a4" }),
+    );
   });
 });
 
