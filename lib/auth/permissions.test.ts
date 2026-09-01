@@ -10,7 +10,7 @@ vi.mock("@/lib/supabase/server", () => ({
   })),
 }));
 
-import { getCurrentAdmin, requirePermission, ForbiddenError } from "./permissions";
+import { getCurrentAdmin, requirePermission, ForbiddenError, withPermission } from "./permissions";
 
 describe("getCurrentAdmin", () => {
   beforeEach(() => {
@@ -129,5 +129,49 @@ describe("requirePermission", () => {
       p_module: "pedidos",
       p_action: "ver",
     });
+  });
+});
+
+describe("withPermission", () => {
+  beforeEach(() => {
+    mockRpc.mockReset();
+  });
+
+  it("ejecuta la función cuando el permiso está concedido", async () => {
+    mockRpc.mockImplementation((fn: string) => {
+      if (fn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Admin", is_active: true, role_names: ["SUPER_ADMIN"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: true, error: null });
+    });
+
+    const result = await withPermission("productos", "crear", async (admin) => {
+      return `hola ${admin.fullName}`;
+    });
+
+    expect(result).toBe("hola Admin");
+  });
+
+  it("propaga ForbiddenError sin ejecutar la función cuando el permiso es denegado", async () => {
+    const fn = vi.fn();
+    mockRpc.mockImplementation((rpcFn: string) => {
+      if (rpcFn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Vendedora", is_active: true, role_names: ["Vendedora"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: false, error: null });
+    });
+
+    await expect(withPermission("productos", "eliminar", fn)).rejects.toThrow(ForbiddenError);
+    expect(fn).not.toHaveBeenCalled();
   });
 });

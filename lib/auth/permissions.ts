@@ -71,3 +71,12 @@ export async function requirePermission(
 
   return admin;
 }
+
+export async function withPermission<T>(
+  module: PermissionModule,
+  action: PermissionAction,
+  fn: (admin: AdminProfile) => Promise<T>,
+): Promise<T> {
+  const admin = await requirePermission(module, action);
+  return fn(admin);
+}
