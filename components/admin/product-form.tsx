@@ -118,7 +118,7 @@ export function ProductForm({ mode, categories, initialValues }: ProductFormProp
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="categoryId">Categoría</Label>
-            <Select name="categoryId" defaultValue={initialValues?.categoryId}>
+            <Select name="categoryId" defaultValue={initialValues?.categoryId} required>
               <SelectTrigger id="categoryId">
                 <SelectValue placeholder="Elegí una categoría" />
               </SelectTrigger>

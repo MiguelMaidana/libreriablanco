@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { AdminSidebar } from "./sidebar";
 
 describe("AdminSidebar", () => {
@@ -22,5 +23,20 @@ describe("AdminSidebar", () => {
 
     expect(screen.queryByText("Pedidos")).not.toBeInTheDocument();
     expect(screen.queryByText("Clientes")).not.toBeInTheDocument();
+  });
+
+  it("cierra el menú mobile al navegar a un link", async () => {
+    const user = userEvent.setup();
+    render(<AdminSidebar adminName="Jessica Besse" />);
+
+    await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+    const dialog = await screen.findByRole("dialog");
+    const link = within(dialog).getByRole("link", { name: "Productos" });
+
+    await user.click(link);
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
   });
 });

@@ -1,10 +1,20 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   uploadProductImage,
   deleteProductImage,
@@ -29,6 +39,7 @@ const MAX_IMAGES = 4;
 export function ProductImageManager({ productId, images }: ProductImageManagerProps) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const sorted = [...images].sort((a, b) => a.position - b.position);
 
   function handleUpload(formData: FormData) {
@@ -52,6 +63,12 @@ export function ProductImageManager({ productId, images }: ProductImageManagerPr
         toast.success("Imagen eliminada.");
       }
     });
+  }
+
+  function confirmDelete() {
+    if (!pendingDeleteId) return;
+    handleDelete(pendingDeleteId);
+    setPendingDeleteId(null);
   }
 
   function handleSetPrimary(imageId: string) {
@@ -91,6 +108,7 @@ export function ProductImageManager({ productId, images }: ProductImageManagerPr
                 type="button"
                 variant="outline"
                 size="sm"
+                aria-label="Mover la foto una posición antes"
                 disabled={isPending || index === 0}
                 onClick={() => handleReorder(image.id, "up")}
               >
@@ -100,6 +118,7 @@ export function ProductImageManager({ productId, images }: ProductImageManagerPr
                 type="button"
                 variant="outline"
                 size="sm"
+                aria-label="Mover la foto una posición después"
                 disabled={isPending || index === sorted.length - 1}
                 onClick={() => handleReorder(image.id, "down")}
               >
@@ -122,13 +141,31 @@ export function ProductImageManager({ productId, images }: ProductImageManagerPr
               variant="ghost"
               size="sm"
               disabled={isPending}
-              onClick={() => handleDelete(image.id)}
+              onClick={() => setPendingDeleteId(image.id)}
             >
               Eliminar
             </Button>
           </div>
         ))}
       </div>
+
+      <AlertDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(next) => !next && setPendingDeleteId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta imagen?</AlertDialogTitle>
+            <AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteId(null)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Eliminar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {sorted.length < MAX_IMAGES ? (
         <form ref={formRef} action={handleUpload} className="flex flex-col gap-2">

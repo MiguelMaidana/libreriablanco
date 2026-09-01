@@ -77,7 +77,7 @@ describe("createCategory", () => {
       formData({ name: "", isFeatured: "", isActive: "on" }),
     );
 
-    expect(result.error).toBe("Revisá los datos ingresados.");
+    expect(result.error).toBe("Ingresá un nombre.");
   });
 
   it("genera un slug único y crea la categoría", async () => {

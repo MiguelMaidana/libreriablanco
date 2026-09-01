@@ -51,7 +51,7 @@ export async function createCategory(
   return withPermissionAction("productos", "crear", FORBIDDEN_CATEGORY, async () => {
     const parsed = parseCategoryForm(formData);
     if (!parsed.success) {
-      return { error: "Revisá los datos ingresados." };
+      return { error: parsed.error.issues[0]?.message ?? "Revisá los datos ingresados." };
     }
 
     const supabase = await createClient();
@@ -82,7 +82,7 @@ export async function updateCategory(
   return withPermissionAction("productos", "editar", FORBIDDEN_CATEGORY, async () => {
     const parsed = parseCategoryForm(formData);
     if (!parsed.success) {
-      return { error: "Revisá los datos ingresados." };
+      return { error: parsed.error.issues[0]?.message ?? "Revisá los datos ingresados." };
     }
 
     const supabase = await createClient();

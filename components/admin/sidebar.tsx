@@ -10,15 +10,24 @@ interface AdminSidebarProps {
   adminName: string;
 }
 
-function NavLinks() {
+interface NavLinksProps {
+  onNavigate?: () => void;
+}
+
+function NavLinks({ onNavigate }: NavLinksProps) {
   return (
     <nav className="flex flex-col gap-1">
-      <Link href="/admin/productos" className="rounded px-3 py-2 text-sm hover:bg-accent">
+      <Link
+        href="/admin/productos"
+        className="rounded px-3 py-2 text-sm hover:bg-accent"
+        onClick={onNavigate}
+      >
         Productos
       </Link>
       <Link
         href="/admin/categorias"
         className="ml-3 rounded px-3 py-2 text-sm hover:bg-accent"
+        onClick={onNavigate}
       >
         Categorías
       </Link>
@@ -57,7 +66,7 @@ export function AdminSidebar({ adminName }: AdminSidebarProps) {
           <SheetContent side="left" className="flex flex-col justify-between p-4">
             <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
             <div>
-              <NavLinks />
+              <NavLinks onNavigate={() => setOpen(false)} />
             </div>
             <div className="flex flex-col gap-2 border-t pt-4">
               <p className="text-sm text-muted-foreground">{adminName}</p>
