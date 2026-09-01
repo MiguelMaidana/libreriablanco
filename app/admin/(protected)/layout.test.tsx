@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
 
 const { mockGetUser, mockGetCurrentAdmin } = vi.hoisted(() => ({
   mockGetUser: vi.fn(),
@@ -53,6 +54,9 @@ describe("ProtectedAdminLayout", () => {
     const marker = <div data-testid="child-marker">contenido protegido</div>;
     const result = await ProtectedAdminLayout({ children: marker });
 
-    expect(result).toEqual(<>{marker}</>);
+    render(result);
+
+    expect(screen.getByTestId("child-marker")).toBeInTheDocument();
+    expect(screen.getByText("contenido protegido")).toBeInTheDocument();
   });
 });

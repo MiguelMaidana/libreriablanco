@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentAdmin } from "@/lib/auth/permissions";
+import { AdminSidebar } from "@/components/admin/sidebar";
 
 export default async function ProtectedAdminLayout({
   children,
@@ -22,5 +23,10 @@ export default async function ProtectedAdminLayout({
     redirect("/admin/unauthorized");
   }
 
-  return <>{children}</>;
+  return (
+    <div className="flex min-h-screen flex-col md:flex-row">
+      <AdminSidebar adminName={admin.fullName} />
+      <div className="flex-1">{children}</div>
+    </div>
+  );
 }
