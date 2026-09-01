@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProductForm } from "@/components/admin/product-form";
+import { ProductImageManager } from "@/components/admin/product-image-manager";
 
 interface EditProductPageProps {
   params: Promise<{ id: string }>;
@@ -10,9 +11,14 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: product }, { data: categories }] = await Promise.all([
+  const [{ data: product }, { data: categories }, { data: images }] = await Promise.all([
     supabase.from("products").select("*").eq("id", id).maybeSingle(),
     supabase.from("categories").select("id, name").eq("is_active", true).order("name"),
+    supabase
+      .from("product_images")
+      .select("id, url, position, is_primary")
+      .eq("product_id", id)
+      .order("position", { ascending: true }),
   ]);
 
   if (!product) {
@@ -44,6 +50,15 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
           publisher: product.publisher ?? undefined,
           tags: product.tags ?? undefined,
         }}
+      />
+      <ProductImageManager
+        productId={product.id}
+        images={(images ?? []).map((img) => ({
+          id: img.id,
+          url: img.url,
+          position: img.position,
+          isPrimary: img.is_primary,
+        }))}
       />
     </main>
   );
