@@ -6,3 +6,7 @@ export function buildWhatsAppUrl(phoneNumber: string, message: string): string {
 export function buildProductInquiryMessage(productName: string, productUrl: string): string {
   return `Hola! Quería consultar sobre "${productName}": ${productUrl}`;
 }
+
+export function buildReceiptMessage(template: string, orderNumber: string): string {
+  return `${template} Número de pedido: ${orderNumber}.`;
+}
