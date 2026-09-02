@@ -9,6 +9,7 @@ import { getSettings } from "@/lib/shop/settings";
 import { formatPrice } from "@/lib/shop/format";
 import { ProductGallery } from "@/components/shop/product-gallery";
 import { ProductCard } from "@/components/shop/product-card";
+import { AddToCartButton } from "@/components/shop/add-to-cart-button";
 import { Button } from "@/components/ui/button";
 
 interface ProductPageProps {
@@ -85,6 +86,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <p className={product.available ? "text-green-600" : "text-destructive"}>
             {product.available ? "Disponible" : "No disponible"}
           </p>
+          <AddToCartButton productId={product.id ?? ""} available={product.available ?? false} />
           {product.full_description && (
             <p className="text-muted-foreground">{product.full_description}</p>
           )}

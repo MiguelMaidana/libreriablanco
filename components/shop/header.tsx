@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SearchInput } from "./search-input";
 import { WhatsAppButton } from "./whatsapp-button";
+import { CartLink } from "./cart-link";
 
 interface HeaderProps {
   whatsappNumber: string | null;
@@ -18,6 +19,7 @@ export function Header({ whatsappNumber, whatsappMessage }: HeaderProps) {
         phoneNumber={whatsappNumber}
         message={whatsappMessage ?? "Hola! Quería hacer una consulta."}
       />
+      <CartLink />
     </header>
   );
 }
