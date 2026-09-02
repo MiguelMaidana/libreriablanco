@@ -15,6 +15,7 @@ vi.mock("./cart-provider", () => ({
   useCart: () => ({
     items: mockItems,
     count: mockItems.length,
+    hydrated: true,
     addItem: vi.fn(),
     setQuantity: vi.fn(),
     removeItem: vi.fn(),

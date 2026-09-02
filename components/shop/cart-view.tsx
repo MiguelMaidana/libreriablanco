@@ -10,16 +10,22 @@ import { Input } from "@/components/ui/input";
 import type { ShopProduct } from "@/lib/shop/products";
 
 export function CartView() {
-  const { items, setQuantity, removeItem } = useCart();
+  const { items, setQuantity, removeItem, hydrated } = useCart();
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    // El carrito arranca vacío hasta que CartProvider lee localStorage;
+    // esperar a `hydrated` evita un fetch con items=[] seguido de otro con
+    // el carrito real (el flash "cargando" → "vacío" → contenido real).
+    if (!hydrated) {
+      return;
+    }
     let cancelled = false;
-    // Al re-obtener productos (disparado por cambio en items), el estado de carga
-    // debe reiniciarse; no hay otro punto de entrada para esta lógica.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoaded(false);
+    // No reiniciamos `loaded` a false acá: una vez que ya se hizo la
+    // primera carga, un re-fetch disparado por un cambio de cantidad no
+    // debe ocultar la lista completa (eso desmontaría el <Input> de
+    // cantidad y le haría perder el foco mientras se tipea).
     getCartProducts(items.map((item) => item.productId)).then((result) => {
       if (!cancelled) {
         setProducts(result);
@@ -29,7 +35,7 @@ export function CartView() {
     return () => {
       cancelled = true;
     };
-  }, [items]);
+  }, [items, hydrated]);
 
   if (!loaded) {
     return <p className="p-8 text-muted-foreground">Cargando carrito...</p>;
@@ -41,7 +47,6 @@ export function CartView() {
 
   const productById = new Map(products.map((product) => [product.id, product]));
   const hasUnavailableItems = items.some((item) => !productById.has(item.productId));
-  const hasAvailableItems = items.some((item) => productById.has(item.productId));
 
   const total = items.reduce((sum, item) => {
     const product = productById.get(item.productId);
@@ -54,7 +59,8 @@ export function CartView() {
 
       {hasUnavailableItems && (
         <p className="rounded border border-destructive p-3 text-sm text-destructive">
-          Algunos productos de tu carrito ya no están disponibles y fueron excluidos del total.
+          Algunos productos de tu carrito ya no están disponibles. Quitalos del carrito para
+          poder continuar a checkout.
         </p>
       )}
 
@@ -88,7 +94,14 @@ export function CartView() {
                   type="number"
                   min={1}
                   value={item.quantity}
-                  onChange={(event) => setQuantity(item.productId, Number(event.target.value))}
+                  onChange={(event) => {
+                    // Un campo vaciado (para retipear) da Number("") === 0, y un
+                    // pegado no numérico da NaN — ninguno de los dos debe borrar
+                    // el item (eso queda reservado al botón "Quitar").
+                    const raw = Number(event.target.value);
+                    const next = Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 1;
+                    setQuantity(item.productId, next);
+                  }}
                   className="w-16"
                 />
                 <Button type="button" variant="ghost" onClick={() => removeItem(item.productId)}>
@@ -102,7 +115,7 @@ export function CartView() {
 
       <p className="text-xl font-semibold">Total: {formatPrice(total)}</p>
 
-      {hasAvailableItems ? (
+      {!hasUnavailableItems ? (
         <Button asChild>
           <Link href="/checkout">Continuar a checkout</Link>
         </Button>

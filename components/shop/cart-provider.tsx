@@ -13,6 +13,7 @@ import {
 interface CartContextValue {
   items: CartItem[];
   count: number;
+  hydrated: boolean;
   addItem: (productId: string, quantity: number) => void;
   setQuantity: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
@@ -23,6 +24,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
   // El carrito solo existe en el navegador — se lee después del montaje
   // para que el primer render del servidor y del cliente coincidan
@@ -30,8 +32,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // El estado del carrito solo puede poblarse después del montaje,
     // no hay otro punto de disparo para esta lógica client-only.
+    // `hydrated` avisa a los consumidores (CheckoutForm, CartView) que
+    // `items` ya refleja localStorage y no el estado inicial vacío, para
+    // que no traten un carrito todavía-no-leído como un carrito vacío.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(readCart());
+    setHydrated(true);
   }, []);
 
   function addItem(productId: string, quantity: number) {
@@ -66,7 +72,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const count = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, count, addItem, setQuantity, removeItem, clear }}>
+    <CartContext.Provider
+      value={{ items, count, hydrated, addItem, setQuantity, removeItem, clear }}
+    >
       {children}
     </CartContext.Provider>
   );

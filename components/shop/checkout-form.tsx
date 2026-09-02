@@ -21,7 +21,7 @@ const initialState: CheckoutActionState = { error: null, orderNumber: null };
 
 export function CheckoutForm({ whatsappNumber, shippingMessage }: CheckoutFormProps) {
   const router = useRouter();
-  const { items, clear } = useCart();
+  const { items, clear, hydrated } = useCart();
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [state, formAction, pending] = useActionState(createOrder, initialState);
@@ -35,15 +35,27 @@ export function CheckoutForm({ whatsappNumber, shippingMessage }: CheckoutFormPr
     if (redirectedRef.current) {
       return;
     }
+    // El carrito arranca vacío hasta que CartProvider lee localStorage.
+    // Sin esperar a `hydrated`, este efecto vería items=[] en el primer
+    // render y redirigiría a /carrito incluso con un carrito real.
+    if (!hydrated) {
+      return;
+    }
     if (items.length === 0) {
       router.replace("/carrito");
       return;
     }
+    let cancelled = false;
     getCartProducts(items.map((item) => item.productId)).then((result) => {
-      setProducts(result);
-      setLoaded(true);
+      if (!cancelled) {
+        setProducts(result);
+        setLoaded(true);
+      }
     });
-  }, [items, router]);
+    return () => {
+      cancelled = true;
+    };
+  }, [items, router, hydrated]);
 
   useEffect(() => {
     if (state.orderNumber && !redirectedRef.current) {
@@ -53,7 +65,7 @@ export function CheckoutForm({ whatsappNumber, shippingMessage }: CheckoutFormPr
     }
   }, [state, clear, router]);
 
-  if (items.length === 0 || !loaded) {
+  if (!hydrated || items.length === 0 || !loaded) {
     return <p className="p-8 text-muted-foreground">Cargando...</p>;
   }
 

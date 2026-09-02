@@ -69,7 +69,16 @@ describe("createOrder", () => {
     });
     mockRpc.mockResolvedValue({ data: [{ order_number: "LB-1000" }], error: null });
 
-    await createOrder({ error: null, orderNumber: null }, buildFormData());
+    // El cliente intenta "colar" su propio precio (price/unit_price) junto
+    // con el item — cartItemSchema descarta las claves desconocidas y el
+    // servidor debe usar igual el precio de la base (999), nunca el 1
+    // que manda el formulario.
+    await createOrder(
+      { error: null, orderNumber: null },
+      buildFormData({
+        items: JSON.stringify([{ productId: "p1", quantity: 2, price: 1, unit_price: 1 }]),
+      }),
+    );
 
     expect(mockRpc).toHaveBeenCalledWith(
       "create_guest_order",

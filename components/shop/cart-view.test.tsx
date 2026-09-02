@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ShopProduct } from "@/lib/shop/products";
 
@@ -11,6 +11,7 @@ vi.mock("./cart-provider", () => ({
   useCart: () => ({
     items: mockItems,
     count: mockItems.reduce((sum, item) => sum + item.quantity, 0),
+    hydrated: true,
     addItem: vi.fn(),
     setQuantity: mockSetQuantity,
     removeItem: mockRemoveItem,
@@ -80,6 +81,21 @@ describe("CartView", () => {
     expect(screen.getByRole("button", { name: "Continuar a checkout" })).toBeDisabled();
   });
 
+  it("deshabilita 'Continuar a checkout' si hay al menos un producto no disponible, aunque otro sí lo esté", async () => {
+    // createOrder es todo-o-nada: si dejáramos avanzar a checkout con un
+    // item no disponible en el carrito, el pedido completo sería
+    // rechazado igual. CartView debe reflejar esa regla, no solo
+    // "algo" disponible.
+    mockItems = [
+      { productId: "p1", quantity: 1 },
+      { productId: "p2", quantity: 1 },
+    ];
+    mockGetCartProducts.mockResolvedValue([cuaderno]);
+    render(<CartView />);
+    await screen.findByText(/ya no están disponibles/i);
+    expect(screen.getByRole("button", { name: "Continuar a checkout" })).toBeDisabled();
+  });
+
   it("habilita 'Continuar a checkout' como link cuando hay productos disponibles", async () => {
     mockItems = [{ productId: "p1", quantity: 1 }];
     mockGetCartProducts.mockResolvedValue([cuaderno]);
@@ -89,5 +105,40 @@ describe("CartView", () => {
       "href",
       "/checkout",
     );
+  });
+
+  it("aumentar la cantidad no reemplaza la lista por el mensaje de carga", async () => {
+    mockItems = [{ productId: "p1", quantity: 1 }];
+    mockGetCartProducts.mockResolvedValue([cuaderno]);
+    const { rerender } = render(<CartView />);
+    await screen.findByText("Cuaderno A4");
+
+    const input = screen.getByRole("spinbutton");
+    mockGetCartProducts.mockResolvedValueOnce([cuaderno]);
+    fireEvent.change(input, { target: { value: "3" } });
+    expect(mockSetQuantity).toHaveBeenCalledWith("p1", 3);
+
+    // Simula la re-renderización reactiva que produciría el CartProvider
+    // real al aplicar el cambio de cantidad (acá el hook está mockeado,
+    // así que forzamos el re-render con el nuevo valor de items).
+    mockItems = [{ productId: "p1", quantity: 3 }];
+    rerender(<CartView />);
+
+    expect(screen.queryByText("Cargando carrito...")).not.toBeInTheDocument();
+    expect(screen.getByRole("spinbutton")).toBeInTheDocument();
+  });
+
+  it("vaciar el input de cantidad no elimina el item ni deja quantity <= 0", async () => {
+    mockItems = [{ productId: "p1", quantity: 1 }];
+    mockGetCartProducts.mockResolvedValue([cuaderno]);
+    render(<CartView />);
+    await screen.findByText("Cuaderno A4");
+
+    const input = screen.getByRole("spinbutton");
+    fireEvent.change(input, { target: { value: "" } });
+
+    expect(mockRemoveItem).not.toHaveBeenCalled();
+    expect(mockSetQuantity).toHaveBeenCalledWith("p1", 1);
+    expect(mockSetQuantity).not.toHaveBeenCalledWith("p1", 0);
   });
 });
