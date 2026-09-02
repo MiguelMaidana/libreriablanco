@@ -28,6 +28,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // para que el primer render del servidor y del cliente coincidan
   // (ambos arrancan vacíos) y no haya warning de hidratación.
   useEffect(() => {
+    // El estado del carrito solo puede poblarse después del montaje,
+    // no hay otro punto de disparo para esta lógica client-only.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(readCart());
   }, []);
 

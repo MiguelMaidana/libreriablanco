@@ -16,6 +16,9 @@ export function CartView() {
 
   useEffect(() => {
     let cancelled = false;
+    // Al re-obtener productos (disparado por cambio en items), el estado de carga
+    // debe reiniciarse; no hay otro punto de entrada para esta lógica.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoaded(false);
     getCartProducts(items.map((item) => item.productId)).then((result) => {
       if (!cancelled) {
