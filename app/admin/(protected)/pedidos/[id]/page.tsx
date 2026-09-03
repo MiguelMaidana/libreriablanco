@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/shop/format";
 import { buildWhatsAppUrl } from "@/lib/shop/whatsapp";
-import { buildOrderContactMessage } from "@/lib/admin/whatsapp";
+import { buildOrderContactMessage, normalizeArgentinePhone } from "@/lib/admin/whatsapp";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_BADGE_VARIANT } from "@/lib/admin/orders";
 import { OrderStatusActions } from "@/components/admin/order-status-actions";
 
@@ -19,7 +19,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "id, order_number, status, total, payment_method, customers(first_name, last_name, phone, email)",
+      "id, order_number, status, total, customers(first_name, last_name, phone, email)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -42,7 +42,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   const whatsappUrl =
     customerPhone && order.customers
       ? buildWhatsAppUrl(
-          customerPhone,
+          normalizeArgentinePhone(customerPhone),
           buildOrderContactMessage(order.customers.first_name, order.order_number),
         )
       : null;
