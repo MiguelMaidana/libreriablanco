@@ -17,9 +17,7 @@ export function SettingsImageUpload({ label, currentUrl, uploadAction }: Setting
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+  function handleUpload(formData: FormData) {
     startTransition(async () => {
       const result = await uploadAction({ error: null }, formData);
       if (result.error) {
@@ -43,7 +41,7 @@ export function SettingsImageUpload({ label, currentUrl, uploadAction }: Setting
           className="aspect-square rounded object-cover"
         />
       )}
-      <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
+      <form ref={formRef} action={handleUpload} className="flex flex-col gap-2">
         <input
           name="file"
           type="file"
