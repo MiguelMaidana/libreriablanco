@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/shop/format";
 
 interface CustomersPageProps {
   searchParams: Promise<{ q?: string }>;
@@ -64,7 +65,9 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
       </form>
 
       {rows.length === 0 ? (
-        <p className="text-muted-foreground">No encontramos clientes con esa búsqueda.</p>
+        <p className="text-muted-foreground">
+          {q ? "No encontramos clientes con esa búsqueda." : "Todavía no hay clientes cargados."}
+        </p>
       ) : (
         <div className="flex flex-col gap-3">
           {rows.map((customer) => {
@@ -82,7 +85,7 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
                 </p>
                 {stats.lastPurchase && (
                   <p className="text-sm text-muted-foreground">
-                    {`Última compra: ${new Date(stats.lastPurchase).toLocaleDateString("es-AR")}`}
+                    {`Última compra: ${formatDate(stats.lastPurchase)}`}
                   </p>
                 )}
               </Link>

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
-import { formatPrice } from "@/lib/shop/format";
+import { formatPrice, formatDate } from "@/lib/shop/format";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_BADGE_VARIANT } from "@/lib/admin/orders";
 
 interface CustomerDetailPageProps {
@@ -51,7 +51,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
           orderRows.map((order) => (
             <div key={order.id} className="flex items-center justify-between text-sm">
               <span>
-                {`Pedido #${order.order_number} · ${new Date(order.created_at).toLocaleDateString("es-AR")} · ${formatPrice(order.total)}`}
+                {`Pedido #${order.order_number} · ${formatDate(order.created_at)} · ${formatPrice(order.total)}`}
               </span>
               <Badge variant={ORDER_STATUS_BADGE_VARIANT[order.status]}>
                 {ORDER_STATUS_LABEL[order.status]}
