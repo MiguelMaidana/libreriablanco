@@ -17,7 +17,15 @@ export function SettingsImageUpload({ label, currentUrl, uploadAction }: Setting
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
-  function handleUpload(formData: FormData) {
+  // A diferencia de otros formularios de este proyecto (e.g. ProductImageManager),
+  // acá se usa onSubmit en lugar de action={fn} directo. Razón: pasar una closure
+  // cruda (no obtenida de useActionState) al prop action de un <form> hace que
+  // React 19 valide y rechace la función en este entorno de test (jsdom + Testing Library),
+  // reemplazando el action con una función que tira error. Aunque funcione en un
+  // navegador real, la arquitectura requiere onSubmit para que los tests pasen.
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       const result = await uploadAction({ error: null }, formData);
       if (result.error) {
@@ -41,7 +49,7 @@ export function SettingsImageUpload({ label, currentUrl, uploadAction }: Setting
           className="aspect-square rounded object-cover"
         />
       )}
-      <form ref={formRef} action={handleUpload} className="flex flex-col gap-2">
+      <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
         <input
           name="file"
           type="file"

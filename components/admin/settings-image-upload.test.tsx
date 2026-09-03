@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 
 vi.mock("sonner", () => ({
   toast: {
@@ -42,16 +41,16 @@ describe("SettingsImageUpload", () => {
     const input = screen.getByLabelText("Subir logo") as HTMLInputElement;
     const form = input.closest("form") as HTMLFormElement;
 
-    // Set files on input manually
+    // Manually set files on input
     Object.defineProperty(input, "files", {
       value: [file],
       writable: false,
     });
 
-    // Dispatch submit event to trigger form submission
-    form.dispatchEvent(new Event("submit", { bubbles: true }));
+    // Dispatch submit event to trigger form submission (matches real browser behavior)
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
 
-    // The uploadAction is called when form submits
+    // Verify uploadAction was called via form submission
     await waitFor(() => {
       expect(mockUploadAction).toHaveBeenCalled();
     });
