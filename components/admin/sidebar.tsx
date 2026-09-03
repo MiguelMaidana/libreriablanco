@@ -45,6 +45,13 @@ function NavLinks({ onNavigate }: NavLinksProps) {
       >
         Clientes
       </Link>
+      <Link
+        href="/admin/configuracion"
+        className="rounded px-3 py-2 text-sm hover:bg-accent"
+        onClick={onNavigate}
+      >
+        Configuración
+      </Link>
     </nav>
   );
 }
