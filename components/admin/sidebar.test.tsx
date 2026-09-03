@@ -18,11 +18,17 @@ describe("AdminSidebar", () => {
     );
   });
 
-  it("no muestra ítems de módulos que todavía no existen", () => {
+  it("muestra los links a Pedidos y Clientes", () => {
     render(<AdminSidebar adminName="Jessica Besse" />);
 
-    expect(screen.queryByText("Pedidos")).not.toBeInTheDocument();
-    expect(screen.queryByText("Clientes")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Pedidos" })).toHaveAttribute(
+      "href",
+      "/admin/pedidos",
+    );
+    expect(screen.getByRole("link", { name: "Clientes" })).toHaveAttribute(
+      "href",
+      "/admin/clientes",
+    );
   });
 
   it("cierra el menú mobile al navegar a un link", async () => {

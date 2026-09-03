@@ -31,6 +31,20 @@ function NavLinks({ onNavigate }: NavLinksProps) {
       >
         Categorías
       </Link>
+      <Link
+        href="/admin/pedidos"
+        className="rounded px-3 py-2 text-sm hover:bg-accent"
+        onClick={onNavigate}
+      >
+        Pedidos
+      </Link>
+      <Link
+        href="/admin/clientes"
+        className="rounded px-3 py-2 text-sm hover:bg-accent"
+        onClick={onNavigate}
+      >
+        Clientes
+      </Link>
     </nav>
   );
 }
