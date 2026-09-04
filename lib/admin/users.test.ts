@@ -172,4 +172,58 @@ describe("wouldRemoveLastSuperAdmin", () => {
     const result = await wouldRemoveLastSuperAdmin("u1");
     expect(result).toBe(false);
   });
+
+  it("falla cerrado (devuelve true) si la query a roles devuelve error", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "roles") {
+        return chain({ data: null, error: { message: "db unreachable" } });
+      }
+      return chain({ data: [], error: null });
+    });
+
+    const result = await wouldRemoveLastSuperAdmin("u1");
+
+    expect(result).toBe(true);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("falla cerrado (devuelve true) si la query a admin_profile_roles devuelve error", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "roles") {
+        return chain({ data: { id: "super-role" }, error: null });
+      }
+      if (table === "admin_profile_roles") {
+        return chain({ data: null, error: { message: "db unreachable" } });
+      }
+      return chain({ count: 0, error: null });
+    });
+
+    const result = await wouldRemoveLastSuperAdmin("u1");
+
+    expect(result).toBe(true);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("falla cerrado (devuelve true) si la query de count final devuelve error", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "roles") {
+        return chain({ data: { id: "super-role" }, error: null });
+      }
+      if (table === "admin_profile_roles") {
+        return chain({ data: [{ admin_profile_id: "u1" }], error: null });
+      }
+      return chain({ count: null, error: { message: "db unreachable" } });
+    });
+
+    const result = await wouldRemoveLastSuperAdmin("u1");
+
+    expect(result).toBe(true);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
 });
