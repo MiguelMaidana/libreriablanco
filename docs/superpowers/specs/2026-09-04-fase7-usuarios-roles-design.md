@@ -59,10 +59,14 @@ la RLS (y contra §11), así que el modelo correcto es:
   cualquiera con `usuarios:ver` O super admin, tal cual permiten ya las
   políticas de `SELECT` existentes y tal cual dice el encabezado del mockup
   del spec maestro §96 ("Visible para SUPER_ADMIN y otros perfiles con
-  permiso"). Se gatea con `requirePermission("usuarios", "ver")` en las
-  páginas — igual que cualquier otra página del admin — pero los botones de
-  crear/editar/borrar/resetear se ocultan si `!admin.roles.includes("SUPER_ADMIN")`
-  (chequeo de UI; el chequeo real vive en el server action).
+  permiso"). Siguiendo el patrón ya establecido en todo el admin (ninguna
+  página llama a `requirePermission` explícitamente — ver `clientes/page.tsx`,
+  `categorias/page.tsx`), estas páginas tampoco lo hacen: consultan
+  directamente vía `createClient()` y la RLS ya filtra qué filas vuelven. Los
+  botones de crear/editar/borrar/resetear se ocultan si
+  `!admin.roles.includes("SUPER_ADMIN")` (la página llama a
+  `getCurrentAdmin()` para esto — chequeo de UI; el chequeo real y
+  vinculante vive en el server action vía `withSuperAdminAction`).
 
 ## Arquitectura
 
@@ -147,11 +151,6 @@ El email se muestra de solo lectura en el formulario de edición.
 `TempPasswordDialog`. Botón oculto si el usuario está inactivo.
 
 ## Flujo: roles y matriz de permisos
-
-`/admin/usuarios/page.tsx` y `/admin/usuarios/roles/page.tsx` se gatean con
-`requirePermission("usuarios", "ver")` (igual que cualquier otra página del
-admin), y ocultan los botones de mutación si el admin actual no es
-SUPER_ADMIN.
 
 `/admin/usuarios/roles/page.tsx`: lista de roles (nombre + cantidad de
 usuarios asignados), excluye `SUPER_ADMIN`.
