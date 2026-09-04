@@ -1,16 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import type { PermissionModule, PermissionAction } from "./permission-catalog";
 
-export type PermissionModule =
-  | "productos"
-  | "precios"
-  | "stock"
-  | "pedidos"
-  | "clientes"
-  | "facturacion"
-  | "usuarios"
-  | "configuracion";
-
-export type PermissionAction = "ver" | "crear" | "editar" | "eliminar";
+export type { PermissionModule, PermissionAction };
+export { PERMISSION_MODULES, PERMISSION_ACTIONS } from "./permission-catalog";
 
 export interface AdminProfile {
   id: string;
@@ -96,19 +88,6 @@ export async function withPermissionAction<S extends { error: string | null }>(
     throw error;
   }
 }
-
-export const PERMISSION_MODULES: PermissionModule[] = [
-  "productos",
-  "precios",
-  "stock",
-  "pedidos",
-  "clientes",
-  "facturacion",
-  "usuarios",
-  "configuracion",
-];
-
-export const PERMISSION_ACTIONS: PermissionAction[] = ["ver", "crear", "editar", "eliminar"];
 
 export async function requireSuperAdmin(): Promise<AdminProfile> {
   const admin = await getCurrentAdmin();

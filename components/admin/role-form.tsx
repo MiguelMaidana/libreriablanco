@@ -25,7 +25,7 @@ import {
   PERMISSION_ACTIONS,
   type PermissionModule,
   type PermissionAction,
-} from "@/lib/auth/permissions";
+} from "@/lib/auth/permission-catalog";
 
 const MODULE_LABELS: Record<PermissionModule, string> = {
   productos: "Productos",
