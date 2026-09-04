@@ -53,30 +53,13 @@ export async function updateUser(
       return { error: parsed.error.issues[0]?.message ?? "Revisá los datos ingresados." };
     }
 
-    // Guard de auto-bloqueo: aunque la UI nunca ofrece SUPER_ADMIN como opción
-    // de reasignación hoy, el server action no puede depender solo de eso.
-    // Para cualquier usuario que no sea el último SUPER_ADMIN activo, esta
-    // función devuelve `false` de inmediato y no afecta la edición normal.
-    const wouldRemove = await wouldRemoveLastSuperAdmin(id);
-    if (wouldRemove) {
-      return { error: "No podés dejar el sistema sin ningún SUPER_ADMIN activo." };
-    }
-
     const supabase = createServiceClient();
 
-    const { error: profileError } = await supabase
-      .from("admin_profiles")
-      .update({ full_name: parsed.data.fullName })
-      .eq("id", id);
-
-    if (profileError) {
-      console.error("updateUser: error updating admin_profile", profileError);
-      return { error: "No pudimos guardar los cambios." };
-    }
-
-    // Insertamos el rol nuevo ANTES de borrar los viejos: si algo falla a
-    // mitad de camino, el peor caso es que el usuario quede con un rol de
-    // más temporalmente (sobre-permiso), nunca con cero roles asignados.
+    // Chequeamos primero si el rol enviado es el que el usuario ya tiene
+    // asignado. `updateUserSchema.roleId` es obligatorio en toda edición
+    // (incluso si solo se cambia el nombre), así que esto es lo único que
+    // nos dice si el rol realmente está cambiando o si es un reenvío del
+    // rol actual.
     const { data: existingAssignment, error: existingAssignmentError } = await supabase
       .from("admin_profile_roles")
       .select("admin_profile_id")
@@ -92,7 +75,35 @@ export async function updateUser(
       return { error: "No pudimos guardar los cambios." };
     }
 
-    if (!existingAssignment) {
+    const roleIsChanging = !existingAssignment;
+
+    if (roleIsChanging) {
+      // Guard de auto-bloqueo: aunque la UI nunca ofrece SUPER_ADMIN como
+      // opción de reasignación hoy, el server action no puede depender solo
+      // de eso. Solo lo evaluamos cuando el rol realmente cambia: si el
+      // usuario reenvía su mismo rol actual (p. ej. al editar solo el
+      // nombre), esto nunca debe dispararse, ni siquiera para el único
+      // SUPER_ADMIN activo.
+      const wouldRemove = await wouldRemoveLastSuperAdmin(id);
+      if (wouldRemove) {
+        return { error: "No podés dejar el sistema sin ningún SUPER_ADMIN activo." };
+      }
+    }
+
+    const { error: profileError } = await supabase
+      .from("admin_profiles")
+      .update({ full_name: parsed.data.fullName })
+      .eq("id", id);
+
+    if (profileError) {
+      console.error("updateUser: error updating admin_profile", profileError);
+      return { error: "No pudimos guardar los cambios." };
+    }
+
+    // Insertamos el rol nuevo ANTES de borrar los viejos: si algo falla a
+    // mitad de camino, el peor caso es que el usuario quede con un rol de
+    // más temporalmente (sobre-permiso), nunca con cero roles asignados.
+    if (roleIsChanging) {
       const { error: insertRoleError } = await supabase
         .from("admin_profile_roles")
         .insert({ admin_profile_id: id, role_id: parsed.data.roleId });

@@ -245,6 +245,9 @@ describe("updateUser", () => {
   it("rechaza reasignar el rol si dejaría al sistema sin SUPER_ADMIN activo", async () => {
     mockSuperAdmin();
     mockWouldRemoveLastSuperAdmin.mockResolvedValue(true);
+    // El chain por defecto no tiene una asignación previa de ese rol, así
+    // que este es un cambio de rol real y el guard debe evaluarse.
+    mockServiceFrom.mockImplementation(() => chain({ error: null }));
     const formData = new FormData();
     formData.set("fullName", "Laura Actualizada");
     formData.set("roleId", "550e8400-e29b-41d4-a716-446655440000");
@@ -253,5 +256,31 @@ describe("updateUser", () => {
 
     expect(result.error).toBe("No podés dejar el sistema sin ningún SUPER_ADMIN activo.");
     expect(mockWouldRemoveLastSuperAdmin).toHaveBeenCalledWith("u1");
+  });
+
+  it("edición de solo nombre reenviando el mismo roleId: no rechaza ni llama al guard, ni siquiera para el único SUPER_ADMIN activo", async () => {
+    mockSuperAdmin();
+    // Si el guard llegara a invocarse acá, la re-revisión anterior ya
+    // demostró que dispara falso positivo: lo hacemos devolver `true` a
+    // propósito para probar que ni siquiera se llama.
+    mockWouldRemoveLastSuperAdmin.mockResolvedValue(true);
+    mockServiceFrom.mockImplementation(() =>
+      chain(
+        { error: null },
+        {
+          // El usuario ya tiene asignado exactamente ese roleId: el rol no
+          // está cambiando, solo el nombre.
+          maybeSingle: async () => ({ data: { admin_profile_id: "u1" }, error: null }),
+        },
+      ),
+    );
+    const formData = new FormData();
+    formData.set("fullName", "Jessica Renombrada");
+    formData.set("roleId", "550e8400-e29b-41d4-a716-446655440000");
+
+    const result = await updateUser("u1", { error: null }, formData);
+
+    expect(result.error).toBeNull();
+    expect(mockWouldRemoveLastSuperAdmin).not.toHaveBeenCalled();
   });
 });
