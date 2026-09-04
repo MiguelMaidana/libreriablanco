@@ -67,6 +67,11 @@ export default async function UsersPage() {
 
   const emailById = new Map((authUsers?.users ?? []).map((u) => [u.id, u.email ?? ""]));
   const roleOptions = roles ?? [];
+  // `roleOptions` excluye SUPER_ADMIN por diseño (la query de arriba filtra
+  // `is_super_admin = false`). Si el roleId de una fila no aparece acá, es
+  // SUPER_ADMIN (o no tiene rol asignado): en ambos casos el <Select> de
+  // UserDialog quedaría roto, así que no le ofrecemos "Editar" a esa fila.
+  const roleOptionIds = new Set(roleOptions.map((role) => role.id));
 
   const rows = (profiles ?? []).map((profile) => {
     const assignedRole = profile.admin_profile_roles[0]?.roles ?? null;
@@ -120,6 +125,7 @@ export default async function UsersPage() {
                         isActive: row.isActive,
                       }}
                       roles={roleOptions}
+                      canEditRole={roleOptionIds.has(row.roleId)}
                     />
                   </TableCell>
                 )}

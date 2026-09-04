@@ -21,9 +21,15 @@ import { toggleActive, resetPassword } from "@/app/admin/(protected)/usuarios/ac
 interface UserRowActionsProps {
   user: UserDialogValue & { isActive: boolean };
   roles: RoleOption[];
+  // `roles` (roleOptions) excluye SUPER_ADMIN por diseño. Para la fila del
+  // propio SUPER_ADMIN, `user.roleId` no existe en esa lista, así que el
+  // <Select> de UserDialog quedaría en un estado sin ninguna opción
+  // coincidente. El caller (usuarios/page.tsx) pasa `false` acá para esas
+  // filas y así evita ofrecer un botón que abra un diálogo de edición roto.
+  canEditRole?: boolean;
 }
 
-export function UserRowActions({ user, roles }: UserRowActionsProps) {
+export function UserRowActions({ user, roles, canEditRole = true }: UserRowActionsProps) {
   const [isPending, startTransition] = useTransition();
   const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
 
@@ -51,7 +57,9 @@ export function UserRowActions({ user, roles }: UserRowActionsProps) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <UserDialog trigger={<Button variant="outline">Editar</Button>} roles={roles} user={user} />
+      {canEditRole && (
+        <UserDialog trigger={<Button variant="outline">Editar</Button>} roles={roles} user={user} />
+      )}
 
       {user.isActive && (
         <AlertDialog>

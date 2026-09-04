@@ -19,9 +19,19 @@ interface TempPasswordDialogProps {
 }
 
 export function TempPasswordDialog({ open, email, password, onClose }: TempPasswordDialogProps) {
-  function handleCopy() {
-    navigator.clipboard.writeText(password);
-    toast.success("Contraseña copiada.");
+  async function handleCopy() {
+    // Esta es la única vez que se muestra la contraseña temporal: si el
+    // copiado falla en silencio (contexto no seguro, permiso denegado,
+    // etc.) y el admin le cree al toast de éxito, la pierde para siempre
+    // (solo recuperable reseteándola de nuevo). Por eso esperamos la
+    // promesa y solo mostramos éxito si realmente se copió.
+    try {
+      await navigator.clipboard.writeText(password);
+      toast.success("Contraseña copiada.");
+    } catch (error) {
+      console.error("TempPasswordDialog: error copying password to clipboard", error);
+      toast.error("No pudimos copiar la contraseña. Copiala manualmente antes de cerrar.");
+    }
   }
 
   return (
