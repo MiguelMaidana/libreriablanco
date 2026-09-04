@@ -10,7 +10,15 @@ vi.mock("@/lib/supabase/server", () => ({
   })),
 }));
 
-import { getCurrentAdmin, requirePermission, ForbiddenError, withPermission, withPermissionAction } from "./permissions";
+import {
+  getCurrentAdmin,
+  requirePermission,
+  requireSuperAdmin,
+  ForbiddenError,
+  withPermission,
+  withPermissionAction,
+  withSuperAdminAction,
+} from "./permissions";
 
 describe("getCurrentAdmin", () => {
   beforeEach(() => {
@@ -224,5 +232,121 @@ describe("withPermissionAction", () => {
     );
 
     expect(result).toEqual({ error: null });
+  });
+});
+
+describe("requireSuperAdmin", () => {
+  beforeEach(() => {
+    mockRpc.mockReset();
+  });
+
+  it("lanza ForbiddenError si no hay admin logueado", async () => {
+    mockRpc.mockReturnValue({
+      maybeSingle: async () => ({ data: null, error: null }),
+    });
+
+    await expect(requireSuperAdmin()).rejects.toThrow(ForbiddenError);
+  });
+
+  it("lanza ForbiddenError si is_super_admin devuelve false", async () => {
+    mockRpc.mockImplementation((fn: string) => {
+      if (fn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Vendedora", is_active: true, role_names: ["Vendedora"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: false, error: null });
+    });
+
+    await expect(requireSuperAdmin()).rejects.toThrow(ForbiddenError);
+  });
+
+  it("devuelve el admin si is_super_admin devuelve true", async () => {
+    mockRpc.mockImplementation((fn: string) => {
+      if (fn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Jessica", is_active: true, role_names: ["SUPER_ADMIN"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: true, error: null });
+    });
+
+    const admin = await requireSuperAdmin();
+    expect(admin.fullName).toBe("Jessica");
+  });
+
+  it("llama a is_super_admin con el user id exacto", async () => {
+    mockRpc.mockImplementation((fn: string) => {
+      if (fn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Jessica", is_active: true, role_names: ["SUPER_ADMIN"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: true, error: null });
+    });
+
+    await requireSuperAdmin();
+
+    expect(mockRpc).toHaveBeenCalledWith("is_super_admin", { p_user_id: "u1" });
+  });
+});
+
+describe("withSuperAdminAction", () => {
+  beforeEach(() => {
+    mockRpc.mockReset();
+  });
+
+  it("devuelve forbiddenState sin ejecutar fn cuando no es super admin", async () => {
+    const fn = vi.fn();
+    mockRpc.mockImplementation((rpcFn: string) => {
+      if (rpcFn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Vendedora", is_active: true, role_names: ["Vendedora"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: false, error: null });
+    });
+
+    const forbiddenState = { error: "Solo un super administrador puede hacer esto." };
+    const result = await withSuperAdminAction(forbiddenState, fn);
+
+    expect(result).toEqual(forbiddenState);
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it("ejecuta fn y devuelve su resultado cuando es super admin", async () => {
+    mockRpc.mockImplementation((rpcFn: string) => {
+      if (rpcFn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Jessica", is_active: true, role_names: ["SUPER_ADMIN"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: true, error: null });
+    });
+
+    const result = await withSuperAdminAction(
+      { error: "no debería verse", who: "" },
+      async (admin) => ({
+        error: null as string | null,
+        who: admin.fullName,
+      }),
+    );
+
+    expect(result).toEqual({ error: null, who: "Jessica" });
   });
 });

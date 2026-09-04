@@ -96,3 +96,56 @@ export async function withPermissionAction<S extends { error: string | null }>(
     throw error;
   }
 }
+
+export const PERMISSION_MODULES: PermissionModule[] = [
+  "productos",
+  "precios",
+  "stock",
+  "pedidos",
+  "clientes",
+  "facturacion",
+  "usuarios",
+  "configuracion",
+];
+
+export const PERMISSION_ACTIONS: PermissionAction[] = ["ver", "crear", "editar", "eliminar"];
+
+export async function requireSuperAdmin(): Promise<AdminProfile> {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    // No hay un module:action único para "no sos SUPER_ADMIN" — se reusa
+    // ForbiddenError solo como señal interna para el catch de
+    // withSuperAdminAction; su mensaje nunca llega al usuario.
+    throw new ForbiddenError("usuarios", "eliminar");
+  }
+
+  const supabase = await createClient();
+  const { data: isSuperAdmin, error } = await supabase.rpc("is_super_admin", {
+    p_user_id: admin.id,
+  });
+
+  if (error) {
+    console.error("requireSuperAdmin: error calling is_super_admin", error);
+  }
+
+  if (!isSuperAdmin) {
+    throw new ForbiddenError("usuarios", "eliminar");
+  }
+
+  return admin;
+}
+
+export async function withSuperAdminAction<S extends { error: string | null }>(
+  forbiddenState: S,
+  fn: (admin: AdminProfile) => Promise<S>,
+): Promise<S> {
+  try {
+    const admin = await requireSuperAdmin();
+    return await fn(admin);
+  } catch (error) {
+    if (error instanceof ForbiddenError) {
+      return forbiddenState;
+    }
+    throw error;
+  }
+}
