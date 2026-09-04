@@ -53,6 +53,15 @@ export async function updateUser(
       return { error: parsed.error.issues[0]?.message ?? "Revisá los datos ingresados." };
     }
 
+    // Guard de auto-bloqueo: aunque la UI nunca ofrece SUPER_ADMIN como opción
+    // de reasignación hoy, el server action no puede depender solo de eso.
+    // Para cualquier usuario que no sea el último SUPER_ADMIN activo, esta
+    // función devuelve `false` de inmediato y no afecta la edición normal.
+    const wouldRemove = await wouldRemoveLastSuperAdmin(id);
+    if (wouldRemove) {
+      return { error: "No podés dejar el sistema sin ningún SUPER_ADMIN activo." };
+    }
+
     const supabase = createServiceClient();
 
     const { error: profileError } = await supabase
@@ -65,22 +74,43 @@ export async function updateUser(
       return { error: "No pudimos guardar los cambios." };
     }
 
-    const { error: deleteRoleError } = await supabase
+    // Insertamos el rol nuevo ANTES de borrar los viejos: si algo falla a
+    // mitad de camino, el peor caso es que el usuario quede con un rol de
+    // más temporalmente (sobre-permiso), nunca con cero roles asignados.
+    const { data: existingAssignment, error: existingAssignmentError } = await supabase
       .from("admin_profile_roles")
-      .delete()
-      .eq("admin_profile_id", id);
+      .select("admin_profile_id")
+      .eq("admin_profile_id", id)
+      .eq("role_id", parsed.data.roleId)
+      .maybeSingle();
 
-    if (deleteRoleError) {
-      console.error("updateUser: error clearing roles", deleteRoleError);
+    if (existingAssignmentError) {
+      console.error(
+        "updateUser: error checking existing role assignment",
+        existingAssignmentError,
+      );
       return { error: "No pudimos guardar los cambios." };
     }
 
-    const { error: insertRoleError } = await supabase
-      .from("admin_profile_roles")
-      .insert({ admin_profile_id: id, role_id: parsed.data.roleId });
+    if (!existingAssignment) {
+      const { error: insertRoleError } = await supabase
+        .from("admin_profile_roles")
+        .insert({ admin_profile_id: id, role_id: parsed.data.roleId });
 
-    if (insertRoleError) {
-      console.error("updateUser: error assigning role", insertRoleError);
+      if (insertRoleError) {
+        console.error("updateUser: error assigning role", insertRoleError);
+        return { error: "No pudimos guardar los cambios." };
+      }
+    }
+
+    const { error: deleteRoleError } = await supabase
+      .from("admin_profile_roles")
+      .delete()
+      .eq("admin_profile_id", id)
+      .neq("role_id", parsed.data.roleId);
+
+    if (deleteRoleError) {
+      console.error("updateUser: error clearing old roles", deleteRoleError);
       return { error: "No pudimos guardar los cambios." };
     }
 
