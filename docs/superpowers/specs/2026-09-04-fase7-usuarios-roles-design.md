@@ -33,10 +33,41 @@ existente, invitación por email (se usa contraseña temporal generada, no
 `inviteUserByEmail`), múltiples roles por usuario (la tabla los soporta, la
 UI no los expone), borrado duro de usuarios.
 
+## Modelo de autorización (corregido tras revisar la RLS existente)
+
+Las políticas RLS sembradas en Fase 1a
+(`supabase/migrations/20260831155059_rls_policies.sql:144-197`) ya reservan
+**toda escritura** sobre `roles`, `permissions`, `role_permissions` y
+`admin_profile_roles` exclusivamente a `SUPER_ADMIN` — citan literalmente la
+spec maestra §11 ("El SUPER_ADMIN podrá: crear roles, editar roles, crear
+usuarios administrativos, deshabilitar usuarios administrativos, asignar
+roles, configurar permisos de cada rol"). `admin_profiles` tampoco tiene
+política de INSERT. El diseño original de esta fase asumía que el permiso
+`usuarios:crear/editar/eliminar` gatearía estas mutaciones — eso choca contra
+la RLS (y contra §11), así que el modelo correcto es:
+
+- **Mutaciones** (crear/editar/desactivar usuario, resetear contraseña,
+  crear/editar/borrar rol, asignar rol): exclusivas de `SUPER_ADMIN`. Se
+  gatean con `requireSuperAdmin()`/`withSuperAdminAction` (nuevo, agregado a
+  `lib/auth/permissions.ts`, análogo a `requirePermission`/
+  `withPermissionAction` pero verificando el RPC `is_super_admin` en vez de
+  `has_permission`). Como estas mutaciones ya usan `createServiceClient()`
+  (necesario para la Auth Admin API y porque `admin_profiles`/`roles` no
+  tienen política de INSERT para usuarios comunes), el gate real de
+  seguridad es este chequeo de aplicación — el `service_role` bypassea RLS.
+- **Lectura de las listas** (`/admin/usuarios`, `/admin/usuarios/roles`):
+  cualquiera con `usuarios:ver` O super admin, tal cual permiten ya las
+  políticas de `SELECT` existentes y tal cual dice el encabezado del mockup
+  del spec maestro §96 ("Visible para SUPER_ADMIN y otros perfiles con
+  permiso"). Se gatea con `requirePermission("usuarios", "ver")` en las
+  páginas — igual que cualquier otra página del admin — pero los botones de
+  crear/editar/borrar/resetear se ocultan si `!admin.roles.includes("SUPER_ADMIN")`
+  (chequeo de UI; el chequeo real vive en el server action).
+
 ## Arquitectura
 
 ```
-lib/auth/permissions.ts          (sin cambios — module "usuarios" ya existe)
+lib/auth/permissions.ts          (agrega requireSuperAdmin(), withSuperAdminAction())
 lib/supabase/service.ts          (ya existe — createServiceClient(), usado hoy en /compra-exitosa)
 lib/admin/users.ts               (nuevo) — operaciones sensibles sobre Auth Admin API, usa createServiceClient()
 
@@ -65,7 +96,7 @@ duplicarse entre `createUser` y `resetPassword`.
 ## Flujo: crear usuario
 
 Server Action `createUser(prevState, formData)`, envuelta en
-`withPermissionAction("usuarios", "crear", ...)`.
+`withSuperAdminAction(...)`.
 
 Validación (Zod): `fullName` requerido, `email` formato válido, `roleId` uuid
 existente en `roles` con `is_super_admin = false` (el selector de rol en la
@@ -90,7 +121,7 @@ La UI abre `TempPasswordDialog` con el email y la contraseña temporal, botón
 
 ## Flujo: editar / desactivar usuario
 
-`updateUser` — `withPermissionAction("usuarios", "editar", ...)`. Permite
+`updateUser` — `withSuperAdminAction(...)`. Permite
 cambiar `fullName`, `roleId` (mismo filtro anti-SUPER_ADMIN) e `isActive`.
 
 Guard de auto-bloqueo, `wouldRemoveLastSuperAdmin(targetUserId)` en
@@ -108,9 +139,7 @@ El email se muestra de solo lectura en el formulario de edición.
 
 ## Flujo: restablecer contraseña
 
-`resetPassword(userId)` — `withPermissionAction("usuarios", "editar", ...)`
-(se reutiliza el permiso `editar`; el catálogo fijo de 4 acciones no tiene una
-acción `resetear` y no se amplía el enum para esto).
+`resetPassword(userId)` — `withSuperAdminAction(...)`.
 
 `resetAdminPassword(userId)`: genera nueva contraseña temporal,
 `auth.admin.updateUserById(userId, { password })`, retorna
@@ -118,6 +147,11 @@ acción `resetear` y no se amplía el enum para esto).
 `TempPasswordDialog`. Botón oculto si el usuario está inactivo.
 
 ## Flujo: roles y matriz de permisos
+
+`/admin/usuarios/page.tsx` y `/admin/usuarios/roles/page.tsx` se gatean con
+`requirePermission("usuarios", "ver")` (igual que cualquier otra página del
+admin), y ocultan los botones de mutación si el admin actual no es
+SUPER_ADMIN.
 
 `/admin/usuarios/roles/page.tsx`: lista de roles (nombre + cantidad de
 usuarios asignados), excluye `SUPER_ADMIN`.
@@ -128,12 +162,13 @@ sembrados: `productos`, `precios`, `stock`, `pedidos`, `clientes`,
 `crear`, `editar`, `eliminar`). Al guardar, se recalcula el set completo de
 `role_permissions` (borra existentes, inserta marcadas).
 
-`createRole`/`updateRole` — `withPermissionAction("usuarios", "crear"/"editar", ...)`.
-`updateRole` rechaza si el rol destino tiene `is_super_admin = true`
-(defensa en profundidad; la UI no debería poder llegar ahí).
+`createRole`/`updateRole` — `withSuperAdminAction(...)`. `updateRole` rechaza
+si el rol destino tiene `is_super_admin = true` (defensa en profundidad; la
+UI no debería poder llegar ahí, y además la RLS lo bloquearía si por algún
+motivo se usara un cliente sin service_role).
 
-`deleteRole(roleId)` — `withPermissionAction("usuarios", "eliminar", ...)`.
-Cuenta usuarios en `admin_profile_roles` con ese `role_id`; si `count > 0`
+`deleteRole(roleId)` — `withSuperAdminAction(...)`. Cuenta usuarios en
+`admin_profile_roles` con ese `role_id`; si `count > 0`
 rechaza con `"Este rol tiene N usuario(s) asignado(s). Reasignalos antes de
 borrarlo."`. También rechaza si el rol es SUPER_ADMIN.
 
@@ -154,12 +189,16 @@ Mismo patrón de mocking del proyecto (`vi.mock("@/lib/supabase/server", ...)`),
 más un mock nuevo para `lib/supabase/service.ts`
 (`auth: { admin: { createUser, deleteUser, updateUserById } }`).
 
+- `lib/auth/permissions.test.ts`: casos nuevos para `requireSuperAdmin`/
+  `withSuperAdminAction` (permitido si `is_super_admin` RPC devuelve true,
+  rechazado si devuelve false o si no hay sesión), siguiendo el mismo patrón
+  de mocks ya usado para `requirePermission`.
 - `lib/admin/users.test.ts`: éxito de `createAdminUser`, rollback si falla el
   insert de `admin_profiles`, rollback si falla el insert de
   `admin_profile_roles`, guard de auto-bloqueo (caso permitido y caso
   rechazado), `resetAdminPassword` éxito/error.
 - `app/admin/(protected)/usuarios/actions.test.ts` y `roles/actions.test.ts`:
-  forbidden por falta de permiso, mapeo de errores a mensajes, filtrado de
+  forbidden por no ser SUPER_ADMIN, mapeo de errores a mensajes, filtrado de
   SUPER_ADMIN en `updateRole`/`deleteRole`.
 - Sin tests de componentes dedicados para `user-dialog.tsx`/`role-form.tsx`/
   `temp-password-dialog.tsx` salvo lógica no trivial — son formularios
@@ -169,7 +208,8 @@ más un mock nuevo para `lib/supabase/service.ts`
 ## Global Constraints (heredadas del proyecto)
 
 - Next.js 16 App Router, React 19, TypeScript, Tailwind v4 + shadcn/ui, Zod v4.
-- Todo Server Action mutante pasa por `withPermissionAction`.
+- Todo Server Action mutante pasa por `withPermissionAction` o, para las
+  mutaciones exclusivas de SUPER_ADMIN de esta fase, por `withSuperAdminAction`.
 - Mensajes de error en español, sin exponer errores crudos de Supabase.
 - `SUPABASE_SERVICE_ROLE_KEY` solo se usa server-side, nunca en código de
   cliente.
