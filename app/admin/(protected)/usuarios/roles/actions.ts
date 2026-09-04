@@ -17,10 +17,10 @@ const FORBIDDEN_ROLE: RoleActionState = { error: "Solo un super administrador pu
 
 function parsePermissionKeys(formData: FormData): { module: string; action: string }[] {
   const keys: { module: string; action: string }[] = [];
-  for (const module of PERMISSION_MODULES) {
+  for (const mod of PERMISSION_MODULES) {
     for (const action of PERMISSION_ACTIONS) {
-      if (formData.get(`perm_${module}_${action}`) === "on") {
-        keys.push({ module, action });
+      if (formData.get(`perm_${mod}_${action}`) === "on") {
+        keys.push({ module: mod, action });
       }
     }
   }

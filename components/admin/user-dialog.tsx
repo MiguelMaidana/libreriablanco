@@ -52,7 +52,7 @@ export function UserDialog({ trigger, roles, user }: UserDialogProps) {
   const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
   const isEdit = Boolean(user);
   const submittedRef = useRef(false);
-  const submittedEmailRef = useRef("");
+  const [submittedEmail, setSubmittedEmail] = useState("");
 
   const action = isEdit ? updateUser.bind(null, user!.id) : createUser;
   const [state, formAction, pending] = useActionState(action, initialState);
@@ -63,14 +63,14 @@ export function UserDialog({ trigger, roles, user }: UserDialogProps) {
     }
     submittedRef.current = false;
     if (state.error !== null) {
+      // Mostrar el error es una reacción al resultado del server action
+      // (state), que solo se conoce después de que se resuelve; no hay un
+      // event handler síncrono desde el cual dispararlo.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplayError(state.error);
       return;
     }
     setDisplayError(null);
-    // Cerrar el diálogo de formulario es una reacción al resultado del
-    // server action (state), que solo se conoce después de que se resuelve;
-    // no hay un event handler síncrono desde el cual dispararlo.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(false);
     if (state.tempPassword) {
       setRevealedPassword(state.tempPassword);
@@ -98,8 +98,8 @@ export function UserDialog({ trigger, roles, user }: UserDialogProps) {
             action={formAction}
             onSubmit={(event) => {
               submittedRef.current = true;
-              submittedEmailRef.current = String(
-                new FormData(event.currentTarget).get("email") ?? "",
+              setSubmittedEmail(
+                String(new FormData(event.currentTarget).get("email") ?? ""),
               );
             }}
             className="flex flex-col gap-4"
@@ -144,7 +144,7 @@ export function UserDialog({ trigger, roles, user }: UserDialogProps) {
       {revealedPassword && (
         <TempPasswordDialog
           open
-          email={user?.email ?? submittedEmailRef.current}
+          email={user?.email ?? submittedEmail}
           password={revealedPassword}
           onClose={() => setRevealedPassword(null)}
         />
