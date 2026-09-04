@@ -52,6 +52,13 @@ function NavLinks({ onNavigate }: NavLinksProps) {
       >
         Configuración
       </Link>
+      <Link
+        href="/admin/usuarios"
+        className="rounded px-3 py-2 text-sm hover:bg-accent"
+        onClick={onNavigate}
+      >
+        Usuarios y Roles
+      </Link>
     </nav>
   );
 }

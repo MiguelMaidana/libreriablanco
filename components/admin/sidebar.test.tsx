@@ -16,6 +16,10 @@ describe("AdminSidebar", () => {
       "href",
       "/admin/categorias",
     );
+    expect(screen.getByRole("link", { name: "Usuarios y Roles" })).toHaveAttribute(
+      "href",
+      "/admin/usuarios",
+    );
   });
 
   it("muestra los links a Pedidos y Clientes", () => {
