@@ -23,6 +23,10 @@ export function SettingsImageUpload({ label, currentUrl, uploadAction }: Setting
   // React 19 valide y rechace la función en este entorno de test (jsdom + Testing Library),
   // reemplazando el action con una función que tira error. Aunque funcione en un
   // navegador real, la arquitectura requiere onSubmit para que los tests pasen.
+  // Verificado en components/admin/settings-image-upload.test.tsx: al usar
+  // <form action={fn}> y disparar el submit con user.click() en un test, React
+  // tira: "A React form was unexpectedly submitted. If you called form.submit()
+  // manually, consider using form.requestSubmit() instead...".
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);

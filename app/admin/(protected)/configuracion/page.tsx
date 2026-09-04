@@ -6,6 +6,17 @@ import { uploadLogo, uploadHeroImage } from "./image-actions";
 export default async function SettingsPage() {
   const settings = await getSettings();
 
+  if (!settings) {
+    return (
+      <main className="flex flex-col gap-4 p-6">
+        <h1 className="text-2xl">Configuración</h1>
+        <p className="text-destructive">
+          No pudimos cargar la configuración. Recargá la página para volver a intentar.
+        </p>
+      </main>
+    );
+  }
+
   return (
     <main className="flex flex-col gap-8 p-6">
       <h1 className="text-2xl">Configuración</h1>

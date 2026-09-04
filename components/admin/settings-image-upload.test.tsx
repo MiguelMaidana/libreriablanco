@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 
 vi.mock("sonner", () => ({
   toast: {
@@ -37,22 +38,29 @@ describe("SettingsImageUpload", () => {
     mockUploadAction.mockResolvedValue({ error: null });
     render(<SettingsImageUpload label="Logo" currentUrl={null} uploadAction={mockUploadAction} />);
 
-    const file = new File(["x"], "logo.png", { type: "image/png" });
     const input = screen.getByLabelText("Subir logo") as HTMLInputElement;
     const form = input.closest("form") as HTMLFormElement;
-
-    // Manually set files on input
-    Object.defineProperty(input, "files", {
-      value: [file],
-      writable: false,
-    });
 
     // Dispatch submit event to trigger form submission (matches real browser behavior)
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
 
-    // Verify uploadAction was called via form submission
+    // Verify uploadAction was called via form submission with the expected shape
     await waitFor(() => {
-      expect(mockUploadAction).toHaveBeenCalled();
+      expect(mockUploadAction).toHaveBeenCalledWith({ error: null }, expect.any(FormData));
+    });
+  });
+
+  it("muestra un error con toast.error cuando uploadAction falla", async () => {
+    mockUploadAction.mockResolvedValue({ error: "algo salió mal" });
+    render(<SettingsImageUpload label="Logo" currentUrl={null} uploadAction={mockUploadAction} />);
+
+    const input = screen.getByLabelText("Subir logo") as HTMLInputElement;
+    const form = input.closest("form") as HTMLFormElement;
+
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("algo salió mal");
     });
   });
 });
