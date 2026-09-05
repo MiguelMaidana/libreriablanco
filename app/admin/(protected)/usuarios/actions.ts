@@ -86,13 +86,6 @@ export async function updateUser(
       return { error: parsed.error.issues[0]?.message ?? "Revisá los datos ingresados." };
     }
 
-    // Defensa en profundidad (ver validateAssignableRole): el roleId
-    // recibido debe ser un rol existente y no-SUPER_ADMIN.
-    const roleValidation = await validateAssignableRole(parsed.data.roleId);
-    if (roleValidation.error) {
-      return { error: roleValidation.error };
-    }
-
     const supabase = createServiceClient();
 
     // Traemos TODOS los roles que el usuario tiene asignados hoy. El
@@ -123,10 +116,27 @@ export async function updateUser(
     // usuario ya tiene — eso cubre tanto "tiene un rol distinto" como
     // "tiene más de un rol, aunque uno de ellos sea el nuevo".
     const roleIsChanging = !isOnlyCurrentRole;
-    // Optimización aparte, solo para no chocar contra la primary key
-    // compuesta al insertar: si el roleId puntual ya está en el conjunto
-    // actual, no hace falta reinsertarlo.
+    // También decide si el roleId enviado es una asignación NUEVA (el
+    // usuario no lo tenía ya) — evita chocar contra la primary key
+    // compuesta al insertar si ya estaba asignado.
     const needsInsert = !currentRoleIds.includes(parsed.data.roleId);
+
+    // Defensa en profundidad (ver validateAssignableRole): solo la
+    // evaluamos cuando el roleId enviado es una asignación nueva, es decir,
+    // cuando el usuario no lo tenía ya entre sus roles actuales. Si el
+    // formulario reenvía un rol que el usuario YA tiene (típicamente porque
+    // solo se editó el nombre), no estamos otorgando nada nuevo y no debe
+    // bloquearse — ni siquiera si ese rol es SUPER_ADMIN. Nótese que esta
+    // condición es `needsInsert`, NO `roleIsChanging`: un usuario con
+    // [SUPER_ADMIN, Vendedora] que reenvía "SUPER_ADMIN" tiene
+    // `roleIsChanging = true` (dejará de tener Vendedora) pero SUPER_ADMIN
+    // ya estaba en su conjunto, así que no corresponde re-validarlo acá.
+    if (needsInsert) {
+      const roleValidation = await validateAssignableRole(parsed.data.roleId);
+      if (roleValidation.error) {
+        return { error: roleValidation.error };
+      }
+    }
 
     if (roleIsChanging) {
       // Guard de auto-bloqueo: aunque la UI nunca ofrece SUPER_ADMIN como

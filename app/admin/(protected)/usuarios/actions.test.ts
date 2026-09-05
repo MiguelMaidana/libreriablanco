@@ -341,7 +341,10 @@ describe("updateUser", () => {
     mockWouldRemoveLastSuperAdmin.mockResolvedValue(true);
     mockServiceFrom.mockImplementation((table: string) => {
       if (table === "roles") {
-        return roleLookupChain({ is_super_admin: false });
+        // El único rol en juego ES SUPER_ADMIN: si `validateAssignableRole`
+        // llegara a correr acá (código roto), rechazaría con "Elegí un rol
+        // válido.", que es exactamente el bug que este test reproduce.
+        return roleLookupChain({ is_super_admin: true });
       }
       if (table === "admin_profile_roles") {
         // El usuario ya tiene asignado exactamente ese roleId (y solo ese):
@@ -376,13 +379,33 @@ describe("updateUser", () => {
         // encontraba la fila de Vendedora, `roleIsChanging` quedaba en
         // `false`, el guard nunca se llamaba, y el delete de más abajo
         // borraba SUPER_ADMIN sin ningún chequeo.
-        return chain({
-          data: [
-            { role_id: "super-admin-role-id" },
-            { role_id: "550e8400-e29b-41d4-a716-446655440000" },
-          ],
-          error: null,
-        });
+        //
+        // El mock de `maybeSingle` también refleja la realidad: ese roleId
+        // puntual YA está asignado a este usuario (es una fila real de
+        // `admin_profile_roles`). Esto importa porque el código roto de
+        // Critical 1 no consultaba el conjunto completo de roles: hacía
+        // `.eq("role_id", roleId).maybeSingle()` para ver si esa asignación
+        // puntual ya existía, y como sí existe, `existingAssignment` sería
+        // truthy y `roleIsChanging` daría `false` (guard salteado, bug
+        // reproducido). Si dejáramos `maybeSingle` en su default (`data:
+        // null`), el código roto obtendría accidentalmente el mismo
+        // resultado que el arreglado y el test no discriminaría entre
+        // ambos.
+        return chain(
+          {
+            data: [
+              { role_id: "super-admin-role-id" },
+              { role_id: "550e8400-e29b-41d4-a716-446655440000" },
+            ],
+            error: null,
+          },
+          {
+            maybeSingle: async () => ({
+              data: { role_id: "550e8400-e29b-41d4-a716-446655440000" },
+              error: null,
+            }),
+          },
+        );
       }
       return chain({ error: null });
     });
