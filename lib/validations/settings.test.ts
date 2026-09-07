@@ -71,4 +71,15 @@ describe("settingsSchema", () => {
       expect(result.data.instagramUrl).toBeNull();
     }
   });
+
+  it("normaliza URLs sin esquema y rechaza URLs invalidas en facebookUrl/instagramUrl", () => {
+    const withoutScheme = settingsSchema.safeParse({ ...validInput, facebookUrl: "facebook.com/libreriablanco" });
+    expect(withoutScheme.success).toBe(true);
+    if (withoutScheme.success) {
+      expect(withoutScheme.data.facebookUrl).toBe("https://facebook.com/libreriablanco");
+    }
+
+    const invalid = settingsSchema.safeParse({ ...validInput, instagramUrl: "not a url" });
+    expect(invalid.success).toBe(false);
+  });
 });

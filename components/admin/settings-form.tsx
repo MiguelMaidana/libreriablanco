@@ -60,11 +60,23 @@ export function SettingsForm({ settings }: SettingsFormProps) {
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="facebookUrl">Facebook</Label>
-          <Input id="facebookUrl" name="facebookUrl" defaultValue={settings?.facebook_url ?? ""} />
+          <Input
+            id="facebookUrl"
+            name="facebookUrl"
+            type="url"
+            placeholder="https://facebook.com/tu-pagina"
+            defaultValue={settings?.facebook_url ?? ""}
+          />
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="instagramUrl">Instagram</Label>
-          <Input id="instagramUrl" name="instagramUrl" defaultValue={settings?.instagram_url ?? ""} />
+          <Input
+            id="instagramUrl"
+            name="instagramUrl"
+            type="url"
+            placeholder="https://instagram.com/tu-cuenta"
+            defaultValue={settings?.instagram_url ?? ""}
+          />
         </div>
       </section>
 

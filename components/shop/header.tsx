@@ -15,7 +15,7 @@ export function Header({ whatsappNumber, whatsappMessage, logoUrl }: HeaderProps
     <header className="flex flex-wrap items-center gap-4 border-b p-4">
       <Link href="/" className="flex items-center text-xl font-bold text-primary">
         {logoUrl ? (
-          <Image src={logoUrl} alt="Librería Blanco" width={40} height={40} className="h-10 w-auto" />
+          <Image src={logoUrl} alt="Librería Blanco" width={40} height={40} priority className="h-10 w-auto" />
         ) : (
           "Librería Blanco"
         )}

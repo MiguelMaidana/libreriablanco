@@ -18,7 +18,7 @@ export function Hero({ title, text, ctaText, ctaLink, imageUrl }: HeroProps) {
     <section className="relative flex flex-col items-center gap-4 overflow-hidden bg-muted px-4 py-16 text-center">
       {imageUrl && (
         <>
-          <Image src={imageUrl} alt="" fill priority className="object-cover" />
+          <Image src={imageUrl} alt="" fill priority sizes="100vw" className="object-cover" />
           <div className="absolute inset-0 bg-black/50" />
         </>
       )}
