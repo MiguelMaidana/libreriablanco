@@ -17,7 +17,16 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
           logoUrl={settings?.logo_url ?? null}
         />
         <main className="flex-1">{children}</main>
-        <Footer />
+        <Footer
+          settings={{
+            businessName: settings?.business_name ?? null,
+            address: settings?.address ?? null,
+            phone: settings?.phone ?? null,
+            businessHours: settings?.business_hours ?? null,
+            facebookUrl: settings?.facebook_url ?? null,
+            instagramUrl: settings?.instagram_url ?? null,
+          }}
+        />
       </div>
     </CartProvider>
   );
