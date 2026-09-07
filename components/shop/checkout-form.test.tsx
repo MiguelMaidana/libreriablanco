@@ -56,13 +56,13 @@ describe("CheckoutForm", () => {
   it("redirige a /carrito si el carrito está vacío", async () => {
     mockItems = [];
     mockGetCartProducts.mockResolvedValue([]);
-    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} />);
+    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} address={null} businessHours={null} />);
     expect(mockReplace).toHaveBeenCalledWith("/carrito");
   });
 
   it("muestra el resumen y el total", async () => {
     mockGetCartProducts.mockResolvedValue([cuaderno]);
-    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} />);
+    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} address={null} businessHours={null} />);
     expect(await screen.findByText(/Cuaderno A4/)).toBeInTheDocument();
     expect(screen.getByText(/Total:/)).toHaveTextContent("1.000");
   });
@@ -74,7 +74,7 @@ describe("CheckoutForm", () => {
       orderNumber: null,
     });
     const user = userEvent.setup();
-    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} />);
+    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} address={null} businessHours={null} />);
     await screen.findByText(/Cuaderno A4/);
 
     await user.type(screen.getByLabelText("Nombre"), "Ana");
@@ -90,7 +90,7 @@ describe("CheckoutForm", () => {
     mockGetCartProducts.mockResolvedValue([cuaderno]);
     mockCreateOrder.mockResolvedValue({ error: null, orderNumber: "LB-1000" });
     const user = userEvent.setup();
-    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} />);
+    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} address={null} businessHours={null} />);
     await screen.findByText(/Cuaderno A4/);
 
     await user.type(screen.getByLabelText("Nombre"), "Ana");
@@ -106,5 +106,37 @@ describe("CheckoutForm", () => {
     // esa protección (el chequeo de redirectedRef.current) se revisa por
     // lectura de código en el task review, no por este test.
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("muestra la dirección y el horario cuando están configurados", async () => {
+    mockGetCartProducts.mockResolvedValue([cuaderno]);
+    render(
+      <CheckoutForm
+        whatsappNumber={null}
+        shippingMessage={null}
+        address="Av. Siempre Viva 742"
+        businessHours="Lunes a viernes de 9 a 18"
+      />,
+    );
+    expect(await screen.findByText("Av. Siempre Viva 742")).toBeInTheDocument();
+    expect(screen.getByText("Lunes a viernes de 9 a 18")).toBeInTheDocument();
+  });
+
+  it("arma el link de WhatsApp de envío con el detalle de los productos del carrito", async () => {
+    mockGetCartProducts.mockResolvedValue([cuaderno]);
+    render(
+      <CheckoutForm
+        whatsappNumber="5491112345678"
+        shippingMessage="¿Podés hacer envío?"
+        address={null}
+        businessHours={null}
+      />,
+    );
+    await screen.findByText(/Cuaderno A4/);
+    const link = screen.getByRole("link", { name: "Consultar por WhatsApp" });
+    expect(link).toHaveAttribute(
+      "href",
+      expect.stringContaining(encodeURIComponent("- Cuaderno A4 x 1")),
+    );
   });
 });

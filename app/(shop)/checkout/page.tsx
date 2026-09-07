@@ -8,6 +8,8 @@ export default async function CheckoutPage() {
     <CheckoutForm
       whatsappNumber={settings?.whatsapp_number ?? null}
       shippingMessage={settings?.whatsapp_shipping_inquiry_template ?? null}
+      address={settings?.address ?? null}
+      businessHours={settings?.business_hours ?? null}
     />
   );
 }

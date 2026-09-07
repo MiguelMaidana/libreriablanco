@@ -6,7 +6,7 @@ import { useCart } from "./cart-provider";
 import { getCartProducts } from "@/lib/shop/cart-products";
 import { createOrder, type CheckoutActionState } from "@/app/(shop)/checkout/actions";
 import { formatPrice } from "@/lib/shop/format";
-import { buildWhatsAppUrl } from "@/lib/shop/whatsapp";
+import { buildWhatsAppUrl, buildShippingInquiryMessage } from "@/lib/shop/whatsapp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,11 +15,18 @@ import type { ShopProduct } from "@/lib/shop/products";
 interface CheckoutFormProps {
   whatsappNumber: string | null;
   shippingMessage: string | null;
+  address: string | null;
+  businessHours: string | null;
 }
 
 const initialState: CheckoutActionState = { error: null, orderNumber: null };
 
-export function CheckoutForm({ whatsappNumber, shippingMessage }: CheckoutFormProps) {
+export function CheckoutForm({
+  whatsappNumber,
+  shippingMessage,
+  address,
+  businessHours,
+}: CheckoutFormProps) {
   const router = useRouter();
   const { items, clear, hydrated } = useCart();
   const [products, setProducts] = useState<ShopProduct[]>([]);
@@ -75,6 +82,18 @@ export function CheckoutForm({ whatsappNumber, shippingMessage }: CheckoutFormPr
     return product?.price ? sum + product.price * item.quantity : sum;
   }, 0);
 
+  const shippingInquiryMessage = shippingMessage
+    ? buildShippingInquiryMessage(
+        shippingMessage,
+        items
+          .map((item) => {
+            const product = productById.get(item.productId);
+            return product ? { name: product.name ?? "", quantity: item.quantity } : null;
+          })
+          .filter((item): item is { name: string; quantity: number } => item !== null),
+      )
+    : null;
+
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-4 py-8">
       <section className="flex flex-col gap-2">
@@ -95,19 +114,23 @@ export function CheckoutForm({ whatsappNumber, shippingMessage }: CheckoutFormPr
         <p className="text-lg font-semibold">Total: {formatPrice(total)}</p>
       </section>
 
-      <p className="text-sm text-muted-foreground">
-        Retiro en el local. ¿Necesitás envío? Consultanos por WhatsApp.{" "}
-        {whatsappNumber && shippingMessage && (
-          <a
-            href={buildWhatsAppUrl(whatsappNumber, shippingMessage)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            Consultar por WhatsApp
-          </a>
-        )}
-      </p>
+      <section className="flex flex-col gap-1 text-sm text-muted-foreground">
+        {address && <p>{address}</p>}
+        {businessHours && <p>{businessHours}</p>}
+        <p>
+          Retiro en el local. ¿Necesitás envío? Consultanos por WhatsApp.{" "}
+          {whatsappNumber && shippingInquiryMessage && (
+            <a
+              href={buildWhatsAppUrl(whatsappNumber, shippingInquiryMessage)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              Consultar por WhatsApp
+            </a>
+          )}
+        </p>
+      </section>
 
       <form action={formAction} className="flex flex-col gap-4">
         <input type="hidden" name="items" value={JSON.stringify(items)} />
