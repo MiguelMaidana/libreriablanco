@@ -7,6 +7,8 @@ const validInput = {
   businessHours: "Lun a Vie 9 a 18",
   phone: "1122334455",
   email: "hola@libreriablanco.com",
+  facebookUrl: "https://facebook.com/libreriablanco",
+  instagramUrl: "https://instagram.com/libreriablanco",
   whatsappNumber: "5491122334455",
   whatsappGeneralMessage: "Hola! Quería hacer una consulta.",
   whatsappReceiptTemplate: "Hola! Te paso el comprobante.",
@@ -59,5 +61,14 @@ describe("settingsSchema", () => {
   it("rechaza si storeEnabled no es un booleano", () => {
     const result = settingsSchema.safeParse({ ...validInput, storeEnabled: "true" });
     expect(result.success).toBe(false);
+  });
+
+  it("acepta y convierte a null los campos de redes sociales", () => {
+    const result = settingsSchema.safeParse({ ...validInput, facebookUrl: "", instagramUrl: "   " });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.facebookUrl).toBeNull();
+      expect(result.data.instagramUrl).toBeNull();
+    }
   });
 });

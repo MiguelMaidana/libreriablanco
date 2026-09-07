@@ -11,6 +11,8 @@ export const settingsSchema = z.object({
   businessHours: optionalText,
   phone: optionalText,
   email: optionalText,
+  facebookUrl: optionalText,
+  instagramUrl: optionalText,
   whatsappNumber: optionalText,
   whatsappGeneralMessage: optionalText,
   whatsappReceiptTemplate: optionalText,

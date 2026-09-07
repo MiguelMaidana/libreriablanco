@@ -58,6 +58,14 @@ export function SettingsForm({ settings }: SettingsFormProps) {
           <Label htmlFor="email">Email</Label>
           <Input id="email" name="email" type="email" defaultValue={settings?.email ?? ""} />
         </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="facebookUrl">Facebook</Label>
+          <Input id="facebookUrl" name="facebookUrl" defaultValue={settings?.facebook_url ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="instagramUrl">Instagram</Label>
+          <Input id="instagramUrl" name="instagramUrl" defaultValue={settings?.instagram_url ?? ""} />
+        </div>
       </section>
 
       <section className="flex flex-col gap-4">

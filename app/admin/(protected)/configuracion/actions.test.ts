@@ -87,6 +87,29 @@ describe("updateSettings", () => {
     expect(eq).toHaveBeenCalledWith("id", 1);
   });
 
+  it("mapea facebookUrl/instagramUrl a facebook_url/instagram_url", async () => {
+    mockAdminAllowed();
+    const eq = vi.fn().mockResolvedValue({ error: null });
+    const update = vi.fn().mockReturnValue({ eq });
+    mockFrom.mockReturnValue({ update });
+
+    await updateSettings(
+      { error: null },
+      formData({
+        facebookUrl: "https://facebook.com/libreriablanco",
+        instagramUrl: "https://instagram.com/libreriablanco",
+        storeEnabled: "on",
+      }),
+    );
+
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        facebook_url: "https://facebook.com/libreriablanco",
+        instagram_url: "https://instagram.com/libreriablanco",
+      }),
+    );
+  });
+
   it("interpreta storeEnabled ausente del form como false", async () => {
     mockAdminAllowed();
     const eq = vi.fn().mockResolvedValue({ error: null });
