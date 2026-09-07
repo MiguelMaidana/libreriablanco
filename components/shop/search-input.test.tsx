@@ -21,4 +21,9 @@ describe("SearchInput", () => {
 
     expect(mockPush).toHaveBeenCalledWith("/productos?q=cuaderno");
   });
+
+  it("tiene un aria-label accesible además del placeholder", () => {
+    render(<SearchInput />);
+    expect(screen.getByRole("searchbox", { name: "Buscar productos" })).toBeInTheDocument();
+  });
 });

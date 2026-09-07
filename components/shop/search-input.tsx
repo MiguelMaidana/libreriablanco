@@ -22,11 +22,15 @@ export function SearchInput() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="min-w-0 flex-1">
+    <form
+      onSubmit={handleSubmit}
+      className="order-last w-full sm:order-none sm:w-auto sm:min-w-0 sm:flex-1"
+    >
       <Input
         name="q"
         type="search"
         placeholder="Buscar cuadernos, lápices, carpetas..."
+        aria-label="Buscar productos"
         defaultValue={searchParams.get("q") ?? ""}
       />
     </form>
