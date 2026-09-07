@@ -14,6 +14,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
         <Header
           whatsappNumber={settings?.whatsapp_number ?? null}
           whatsappMessage={settings?.whatsapp_general_message ?? null}
+          logoUrl={settings?.logo_url ?? null}
         />
         <main className="flex-1">{children}</main>
         <Footer />
