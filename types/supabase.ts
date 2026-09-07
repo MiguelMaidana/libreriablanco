@@ -592,12 +592,14 @@ export type Database = {
           business_hours: string | null
           business_name: string | null
           email: string | null
+          facebook_url: string | null
           hero_cta_link: string | null
           hero_cta_text: string | null
           hero_image_url: string | null
           hero_text: string | null
           hero_title: string | null
           id: number
+          instagram_url: string | null
           legal_name: string | null
           logo_url: string | null
           phone: string | null
@@ -620,12 +622,14 @@ export type Database = {
           business_hours?: string | null
           business_name?: string | null
           email?: string | null
+          facebook_url?: string | null
           hero_cta_link?: string | null
           hero_cta_text?: string | null
           hero_image_url?: string | null
           hero_text?: string | null
           hero_title?: string | null
           id?: number
+          instagram_url?: string | null
           legal_name?: string | null
           logo_url?: string | null
           phone?: string | null
@@ -648,12 +652,14 @@ export type Database = {
           business_hours?: string | null
           business_name?: string | null
           email?: string | null
+          facebook_url?: string | null
           hero_cta_link?: string | null
           hero_cta_text?: string | null
           hero_image_url?: string | null
           hero_text?: string | null
           hero_title?: string | null
           id?: number
+          instagram_url?: string | null
           legal_name?: string | null
           logo_url?: string | null
           phone?: string | null
