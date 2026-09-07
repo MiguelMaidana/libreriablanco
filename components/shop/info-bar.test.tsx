@@ -3,9 +3,11 @@ import { render, screen } from "@testing-library/react";
 import { InfoBar } from "./info-bar";
 
 describe("InfoBar", () => {
-  it("muestra el mensaje de retiro y WhatsApp cuando la tienda está habilitada", () => {
+  it("muestra las 3 columnas de información cuando la tienda está habilitada", () => {
     render(<InfoBar storeEnabled={true} />);
     expect(screen.getByText(/Retirá gratis/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pago por transferencia/i)).toBeInTheDocument();
+    expect(screen.getByText(/Consultanos por WhatsApp/i)).toBeInTheDocument();
   });
 
   it("muestra un aviso de mantenimiento cuando la tienda está deshabilitada", () => {
