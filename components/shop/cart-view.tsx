@@ -5,11 +5,17 @@ import Link from "next/link";
 import { useCart } from "./cart-provider";
 import { getCartProducts } from "@/lib/shop/cart-products";
 import { formatPrice } from "@/lib/shop/format";
+import { buildWhatsAppUrl, buildShippingInquiryMessage } from "@/lib/shop/whatsapp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ShopProduct } from "@/lib/shop/products";
 
-export function CartView() {
+interface CartViewProps {
+  whatsappNumber: string | null;
+  shippingMessage: string | null;
+}
+
+export function CartView({ whatsappNumber, shippingMessage }: CartViewProps) {
   const { items, setQuantity, removeItem, hydrated } = useCart();
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -21,11 +27,11 @@ export function CartView() {
     if (!hydrated) {
       return;
     }
-    let cancelled = false;
     // No reiniciamos `loaded` a false acá: una vez que ya se hizo la
     // primera carga, un re-fetch disparado por un cambio de cantidad no
     // debe ocultar la lista completa (eso desmontaría el <Input> de
     // cantidad y le haría perder el foco mientras se tipea).
+    let cancelled = false;
     getCartProducts(items.map((item) => item.productId)).then((result) => {
       if (!cancelled) {
         setProducts(result);
@@ -52,6 +58,18 @@ export function CartView() {
     const product = productById.get(item.productId);
     return product?.price ? sum + product.price * item.quantity : sum;
   }, 0);
+
+  const shippingInquiryMessage = shippingMessage
+    ? buildShippingInquiryMessage(
+        shippingMessage,
+        items
+          .map((item) => {
+            const product = productById.get(item.productId);
+            return product ? { name: product.name ?? "", quantity: item.quantity } : null;
+          })
+          .filter((item): item is { name: string; quantity: number } => item !== null),
+      )
+    : null;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
@@ -80,6 +98,7 @@ export function CartView() {
               </li>
             );
           }
+          const subtotal = product.price ? product.price * item.quantity : 0;
           return (
             <li
               key={item.productId}
@@ -88,6 +107,7 @@ export function CartView() {
               <div className="flex flex-col gap-1">
                 <p className="font-medium">{product.name}</p>
                 <p className="text-sm text-muted-foreground">{formatPrice(product.price)}</p>
+                <p className="text-sm text-muted-foreground">Subtotal: {formatPrice(subtotal)}</p>
               </div>
               <div className="flex items-center gap-2">
                 <Input
@@ -115,15 +135,34 @@ export function CartView() {
 
       <p className="text-xl font-semibold">Total: {formatPrice(total)}</p>
 
-      {!hasUnavailableItems ? (
-        <Button asChild>
-          <Link href="/checkout">Continuar a checkout</Link>
+      <p className="text-sm text-muted-foreground">
+        Retiro sin cargo en el local. ¿Necesitás envío? Consultanos por WhatsApp.{" "}
+        {whatsappNumber && shippingInquiryMessage && (
+          <a
+            href={buildWhatsAppUrl(whatsappNumber, shippingInquiryMessage)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            Consultar por WhatsApp
+          </a>
+        )}
+      </p>
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        {!hasUnavailableItems ? (
+          <Button asChild>
+            <Link href="/checkout">Continuar con la compra</Link>
+          </Button>
+        ) : (
+          <Button type="button" disabled>
+            Continuar con la compra
+          </Button>
+        )}
+        <Button asChild variant="outline">
+          <Link href="/productos">Continuar comprando</Link>
         </Button>
-      ) : (
-        <Button type="button" disabled>
-          Continuar a checkout
-        </Button>
-      )}
+      </div>
     </div>
   );
 }

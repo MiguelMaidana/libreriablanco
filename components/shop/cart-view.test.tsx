@@ -44,14 +44,14 @@ describe("CartView", () => {
 
   it("muestra el mensaje de carrito vacío cuando no hay items", async () => {
     mockGetCartProducts.mockResolvedValue([]);
-    render(<CartView />);
+    render(<CartView whatsappNumber={null} shippingMessage={null} />);
     expect(await screen.findByText("Tu carrito está vacío.")).toBeInTheDocument();
   });
 
   it("muestra los productos del carrito con su precio y el total", async () => {
     mockItems = [{ productId: "p1", quantity: 2 }];
     mockGetCartProducts.mockResolvedValue([cuaderno]);
-    render(<CartView />);
+    render(<CartView whatsappNumber={null} shippingMessage={null} />);
     expect(await screen.findByText("Cuaderno A4")).toBeInTheDocument();
     expect(screen.getByText(/Total:/)).toHaveTextContent("2.000");
   });
@@ -59,7 +59,7 @@ describe("CartView", () => {
   it("avisa cuando un producto del carrito ya no está disponible", async () => {
     mockItems = [{ productId: "p1", quantity: 1 }];
     mockGetCartProducts.mockResolvedValue([]);
-    render(<CartView />);
+    render(<CartView whatsappNumber={null} shippingMessage={null} />);
     expect(await screen.findByText(/ya no están disponibles/i)).toBeInTheDocument();
   });
 
@@ -67,21 +67,21 @@ describe("CartView", () => {
     mockItems = [{ productId: "p1", quantity: 1 }];
     mockGetCartProducts.mockResolvedValue([cuaderno]);
     const user = userEvent.setup();
-    render(<CartView />);
+    render(<CartView whatsappNumber={null} shippingMessage={null} />);
     await screen.findByText("Cuaderno A4");
     await user.click(screen.getByRole("button", { name: "Quitar" }));
     expect(mockRemoveItem).toHaveBeenCalledWith("p1");
   });
 
-  it("deshabilita 'Continuar a checkout' si ningún producto está disponible", async () => {
+  it("deshabilita 'Continuar con la compra' si ningún producto está disponible", async () => {
     mockItems = [{ productId: "p1", quantity: 1 }];
     mockGetCartProducts.mockResolvedValue([]);
-    render(<CartView />);
+    render(<CartView whatsappNumber={null} shippingMessage={null} />);
     await screen.findByText(/ya no están disponibles/i);
-    expect(screen.getByRole("button", { name: "Continuar a checkout" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Continuar con la compra" })).toBeDisabled();
   });
 
-  it("deshabilita 'Continuar a checkout' si hay al menos un producto no disponible, aunque otro sí lo esté", async () => {
+  it("deshabilita 'Continuar con la compra' si hay al menos un producto no disponible, aunque otro sí lo esté", async () => {
     // createOrder es todo-o-nada: si dejáramos avanzar a checkout con un
     // item no disponible en el carrito, el pedido completo sería
     // rechazado igual. CartView debe reflejar esa regla, no solo
@@ -91,17 +91,17 @@ describe("CartView", () => {
       { productId: "p2", quantity: 1 },
     ];
     mockGetCartProducts.mockResolvedValue([cuaderno]);
-    render(<CartView />);
+    render(<CartView whatsappNumber={null} shippingMessage={null} />);
     await screen.findByText(/ya no están disponibles/i);
-    expect(screen.getByRole("button", { name: "Continuar a checkout" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Continuar con la compra" })).toBeDisabled();
   });
 
-  it("habilita 'Continuar a checkout' como link cuando hay productos disponibles", async () => {
+  it("habilita 'Continuar con la compra' como link cuando hay productos disponibles", async () => {
     mockItems = [{ productId: "p1", quantity: 1 }];
     mockGetCartProducts.mockResolvedValue([cuaderno]);
-    render(<CartView />);
+    render(<CartView whatsappNumber={null} shippingMessage={null} />);
     await screen.findByText("Cuaderno A4");
-    expect(screen.getByRole("link", { name: "Continuar a checkout" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Continuar con la compra" })).toHaveAttribute(
       "href",
       "/checkout",
     );
@@ -110,7 +110,7 @@ describe("CartView", () => {
   it("aumentar la cantidad no reemplaza la lista por el mensaje de carga", async () => {
     mockItems = [{ productId: "p1", quantity: 1 }];
     mockGetCartProducts.mockResolvedValue([cuaderno]);
-    const { rerender } = render(<CartView />);
+    const { rerender } = render(<CartView whatsappNumber={null} shippingMessage={null} />);
     await screen.findByText("Cuaderno A4");
 
     const input = screen.getByRole("spinbutton");
@@ -122,7 +122,7 @@ describe("CartView", () => {
     // real al aplicar el cambio de cantidad (acá el hook está mockeado,
     // así que forzamos el re-render con el nuevo valor de items).
     mockItems = [{ productId: "p1", quantity: 3 }];
-    rerender(<CartView />);
+    rerender(<CartView whatsappNumber={null} shippingMessage={null} />);
 
     expect(screen.queryByText("Cargando carrito...")).not.toBeInTheDocument();
     expect(screen.getByRole("spinbutton")).toBeInTheDocument();
@@ -131,7 +131,7 @@ describe("CartView", () => {
   it("vaciar el input de cantidad no elimina el item ni deja quantity <= 0", async () => {
     mockItems = [{ productId: "p1", quantity: 1 }];
     mockGetCartProducts.mockResolvedValue([cuaderno]);
-    render(<CartView />);
+    render(<CartView whatsappNumber={null} shippingMessage={null} />);
     await screen.findByText("Cuaderno A4");
 
     const input = screen.getByRole("spinbutton");
@@ -140,5 +140,44 @@ describe("CartView", () => {
     expect(mockRemoveItem).not.toHaveBeenCalled();
     expect(mockSetQuantity).toHaveBeenCalledWith("p1", 1);
     expect(mockSetQuantity).not.toHaveBeenCalledWith("p1", 0);
+  });
+
+  it("muestra el subtotal por línea", async () => {
+    mockItems = [{ productId: "p1", quantity: 2 }];
+    mockGetCartProducts.mockResolvedValue([cuaderno]);
+    render(<CartView whatsappNumber={null} shippingMessage={null} />);
+    await screen.findByText("Cuaderno A4");
+    expect(screen.getByText(/Subtotal:/)).toHaveTextContent("2.000");
+  });
+
+  it("muestra el link 'Continuar comprando' hacia /productos", async () => {
+    mockItems = [{ productId: "p1", quantity: 1 }];
+    mockGetCartProducts.mockResolvedValue([cuaderno]);
+    render(<CartView whatsappNumber={null} shippingMessage={null} />);
+    await screen.findByText("Cuaderno A4");
+    expect(screen.getByRole("link", { name: "Continuar comprando" })).toHaveAttribute(
+      "href",
+      "/productos",
+    );
+  });
+
+  it("muestra el mensaje de retiro sin cargo en el local", async () => {
+    mockItems = [{ productId: "p1", quantity: 1 }];
+    mockGetCartProducts.mockResolvedValue([cuaderno]);
+    render(<CartView whatsappNumber={null} shippingMessage={null} />);
+    await screen.findByText("Cuaderno A4");
+    expect(screen.getByText(/Retiro sin cargo en el local/)).toBeInTheDocument();
+  });
+
+  it("arma el link de WhatsApp de envío con el detalle de los productos del carrito", async () => {
+    mockItems = [{ productId: "p1", quantity: 2 }];
+    mockGetCartProducts.mockResolvedValue([cuaderno]);
+    render(<CartView whatsappNumber="5491112345678" shippingMessage="¿Podés hacer envío?" />);
+    await screen.findByText("Cuaderno A4");
+    const link = screen.getByRole("link", { name: "Consultar por WhatsApp" });
+    expect(link).toHaveAttribute(
+      "href",
+      expect.stringContaining(encodeURIComponent("- Cuaderno A4 x 2")),
+    );
   });
 });
