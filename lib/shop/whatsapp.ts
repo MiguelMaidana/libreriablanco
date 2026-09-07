@@ -17,6 +17,9 @@ export interface ShippingInquiryItem {
 }
 
 export function buildShippingInquiryMessage(template: string, items: ShippingInquiryItem[]): string {
+  if (items.length === 0) {
+    return template;
+  }
   const itemLines = items.map((item) => `- ${item.name} x ${item.quantity}`).join("\n");
   return `${template}\n\n${itemLines}`;
 }

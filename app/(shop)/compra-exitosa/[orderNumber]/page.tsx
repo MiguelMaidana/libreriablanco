@@ -62,6 +62,7 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
         transferInstructions: settings?.transfer_instructions ?? null,
         address: settings?.address ?? null,
         businessHours: settings?.business_hours ?? null,
+        pickupInstructions: settings?.pickup_instructions_text ?? null,
       }}
     />
   );

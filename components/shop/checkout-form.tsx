@@ -17,6 +17,7 @@ interface CheckoutFormProps {
   shippingMessage: string | null;
   address: string | null;
   businessHours: string | null;
+  pickupInstructions: string | null;
 }
 
 const initialState: CheckoutActionState = { error: null, orderNumber: null };
@@ -26,6 +27,7 @@ export function CheckoutForm({
   shippingMessage,
   address,
   businessHours,
+  pickupInstructions,
 }: CheckoutFormProps) {
   const router = useRouter();
   const { items, clear, hydrated } = useCart();
@@ -115,10 +117,12 @@ export function CheckoutForm({
       </section>
 
       <section className="flex flex-col gap-1 text-sm text-muted-foreground">
+        <h2 className="text-lg font-semibold">Retiro</h2>
         {address && <p>{address}</p>}
         {businessHours && <p>{businessHours}</p>}
+        {pickupInstructions && <p>{pickupInstructions}</p>}
         <p>
-          Retiro en el local. ¿Necesitás envío? Consultanos por WhatsApp.{" "}
+          Retiro sin cargo en el local. ¿Necesitás envío? Consultanos por WhatsApp.{" "}
           {whatsappNumber && shippingInquiryMessage && (
             <a
               href={buildWhatsAppUrl(whatsappNumber, shippingInquiryMessage)}

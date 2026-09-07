@@ -46,4 +46,9 @@ describe("buildShippingInquiryMessage", () => {
     ]);
     expect(message).toBe("¿Podés hacer envío?\n\n- Cuaderno A4 x 2\n- Lapicera azul x 1");
   });
+
+  it("devuelve la plantilla sin agregar nada cuando no hay productos disponibles", () => {
+    const message = buildShippingInquiryMessage("¿Podés hacer envío?", []);
+    expect(message).toBe("¿Podés hacer envío?");
+  });
 });

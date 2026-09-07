@@ -56,13 +56,29 @@ describe("CheckoutForm", () => {
   it("redirige a /carrito si el carrito está vacío", async () => {
     mockItems = [];
     mockGetCartProducts.mockResolvedValue([]);
-    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} address={null} businessHours={null} />);
+    render(
+      <CheckoutForm
+        whatsappNumber={null}
+        shippingMessage={null}
+        address={null}
+        businessHours={null}
+        pickupInstructions={null}
+      />,
+    );
     expect(mockReplace).toHaveBeenCalledWith("/carrito");
   });
 
   it("muestra el resumen y el total", async () => {
     mockGetCartProducts.mockResolvedValue([cuaderno]);
-    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} address={null} businessHours={null} />);
+    render(
+      <CheckoutForm
+        whatsappNumber={null}
+        shippingMessage={null}
+        address={null}
+        businessHours={null}
+        pickupInstructions={null}
+      />,
+    );
     expect(await screen.findByText(/Cuaderno A4/)).toBeInTheDocument();
     expect(screen.getByText(/Total:/)).toHaveTextContent("1.000");
   });
@@ -74,7 +90,15 @@ describe("CheckoutForm", () => {
       orderNumber: null,
     });
     const user = userEvent.setup();
-    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} address={null} businessHours={null} />);
+    render(
+      <CheckoutForm
+        whatsappNumber={null}
+        shippingMessage={null}
+        address={null}
+        businessHours={null}
+        pickupInstructions={null}
+      />,
+    );
     await screen.findByText(/Cuaderno A4/);
 
     await user.type(screen.getByLabelText("Nombre"), "Ana");
@@ -90,7 +114,15 @@ describe("CheckoutForm", () => {
     mockGetCartProducts.mockResolvedValue([cuaderno]);
     mockCreateOrder.mockResolvedValue({ error: null, orderNumber: "LB-1000" });
     const user = userEvent.setup();
-    render(<CheckoutForm whatsappNumber={null} shippingMessage={null} address={null} businessHours={null} />);
+    render(
+      <CheckoutForm
+        whatsappNumber={null}
+        shippingMessage={null}
+        address={null}
+        businessHours={null}
+        pickupInstructions={null}
+      />,
+    );
     await screen.findByText(/Cuaderno A4/);
 
     await user.type(screen.getByLabelText("Nombre"), "Ana");
@@ -108,7 +140,7 @@ describe("CheckoutForm", () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it("muestra la dirección y el horario cuando están configurados", async () => {
+  it("muestra el encabezado 'Retiro', la dirección y el horario cuando están configurados", async () => {
     mockGetCartProducts.mockResolvedValue([cuaderno]);
     render(
       <CheckoutForm
@@ -116,10 +148,40 @@ describe("CheckoutForm", () => {
         shippingMessage={null}
         address="Av. Siempre Viva 742"
         businessHours="Lunes a viernes de 9 a 18"
+        pickupInstructions={null}
       />,
     );
-    expect(await screen.findByText("Av. Siempre Viva 742")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Retiro" })).toBeInTheDocument();
+    expect(screen.getByText("Av. Siempre Viva 742")).toBeInTheDocument();
     expect(screen.getByText("Lunes a viernes de 9 a 18")).toBeInTheDocument();
+  });
+
+  it("muestra las instrucciones de retiro cuando están configuradas", async () => {
+    mockGetCartProducts.mockResolvedValue([cuaderno]);
+    render(
+      <CheckoutForm
+        whatsappNumber={null}
+        shippingMessage={null}
+        address={null}
+        businessHours={null}
+        pickupInstructions="Tocar timbre en la puerta lateral."
+      />,
+    );
+    expect(await screen.findByText("Tocar timbre en la puerta lateral.")).toBeInTheDocument();
+  });
+
+  it("muestra 'Retiro sin cargo en el local', igual que en el carrito", async () => {
+    mockGetCartProducts.mockResolvedValue([cuaderno]);
+    render(
+      <CheckoutForm
+        whatsappNumber={null}
+        shippingMessage={null}
+        address={null}
+        businessHours={null}
+        pickupInstructions={null}
+      />,
+    );
+    expect(await screen.findByText(/Retiro sin cargo en el local/)).toBeInTheDocument();
   });
 
   it("arma el link de WhatsApp de envío con el detalle de los productos del carrito", async () => {
@@ -130,6 +192,7 @@ describe("CheckoutForm", () => {
         shippingMessage="¿Podés hacer envío?"
         address={null}
         businessHours={null}
+        pickupInstructions={null}
       />,
     );
     await screen.findByText(/Cuaderno A4/);

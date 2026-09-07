@@ -23,6 +23,7 @@ export interface OrderConfirmationSettings {
   transferInstructions: string | null;
   address: string | null;
   businessHours: string | null;
+  pickupInstructions: string | null;
 }
 
 interface OrderConfirmationProps {
@@ -64,10 +65,12 @@ export function OrderConfirmation({ orderNumber, items, total, settings }: Order
         )}
       </section>
 
-      {(settings.address || settings.businessHours) && (
+      {(settings.address || settings.businessHours || settings.pickupInstructions) && (
         <section className="flex flex-col gap-1 text-sm text-muted-foreground">
+          <h2 className="text-lg font-semibold">Retiro</h2>
           {settings.address && <p>{settings.address}</p>}
           {settings.businessHours && <p>{settings.businessHours}</p>}
+          {settings.pickupInstructions && <p>{settings.pickupInstructions}</p>}
         </section>
       )}
 

@@ -19,6 +19,7 @@ const baseProps = {
     transferInstructions: null,
     address: null,
     businessHours: null,
+    pickupInstructions: null,
   },
 };
 
@@ -70,7 +71,7 @@ describe("OrderConfirmation", () => {
     expect(link).toHaveAttribute("href", expect.stringContaining("wa.me/5491112345678"));
   });
 
-  it("muestra la dirección y el horario cuando están configurados", () => {
+  it("muestra el encabezado 'Retiro', la dirección y el horario cuando están configurados", () => {
     render(
       <OrderConfirmation
         {...baseProps}
@@ -81,8 +82,23 @@ describe("OrderConfirmation", () => {
         }}
       />,
     );
+    expect(screen.getByRole("heading", { name: "Retiro" })).toBeInTheDocument();
     expect(screen.getByText("Av. Siempre Viva 742")).toBeInTheDocument();
     expect(screen.getByText("Lunes a viernes de 9 a 18")).toBeInTheDocument();
+  });
+
+  it("muestra las instrucciones de retiro cuando están configuradas", () => {
+    render(
+      <OrderConfirmation
+        {...baseProps}
+        settings={{
+          ...baseProps.settings,
+          pickupInstructions: "Tocar timbre en la puerta lateral.",
+        }}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Retiro" })).toBeInTheDocument();
+    expect(screen.getByText("Tocar timbre en la puerta lateral.")).toBeInTheDocument();
   });
 
   it("muestra el botón de consulta general por WhatsApp cuando hay número configurado", () => {

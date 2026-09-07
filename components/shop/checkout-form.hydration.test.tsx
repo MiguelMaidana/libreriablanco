@@ -56,7 +56,13 @@ describe("CheckoutForm con CartProvider real (hidratación)", () => {
 
     render(
       <CartProvider>
-        <CheckoutForm whatsappNumber={null} shippingMessage={null} address={null} businessHours={null} />
+        <CheckoutForm
+          whatsappNumber={null}
+          shippingMessage={null}
+          address={null}
+          businessHours={null}
+          pickupInstructions={null}
+        />
       </CartProvider>,
     );
 
