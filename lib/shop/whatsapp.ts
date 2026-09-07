@@ -10,3 +10,13 @@ export function buildProductInquiryMessage(productName: string, productUrl: stri
 export function buildReceiptMessage(template: string, orderNumber: string): string {
   return `${template} Número de pedido: ${orderNumber}.`;
 }
+
+export interface ShippingInquiryItem {
+  name: string;
+  quantity: number;
+}
+
+export function buildShippingInquiryMessage(template: string, items: ShippingInquiryItem[]): string {
+  const itemLines = items.map((item) => `- ${item.name} x ${item.quantity}`).join("\n");
+  return `${template}\n\n${itemLines}`;
+}
