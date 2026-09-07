@@ -1,6 +1,7 @@
 import { InfoBar } from "@/components/shop/info-bar";
 import { Header } from "@/components/shop/header";
 import { Footer } from "@/components/shop/footer";
+import { WhatsAppFloatingButton } from "@/components/shop/whatsapp-floating-button";
 import { CartProvider } from "@/components/shop/cart-provider";
 import { getSettings } from "@/lib/shop/settings";
 
@@ -11,11 +12,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
     <CartProvider>
       <div className="flex min-h-screen flex-col">
         <InfoBar storeEnabled={settings?.store_enabled ?? true} />
-        <Header
-          whatsappNumber={settings?.whatsapp_number ?? null}
-          whatsappMessage={settings?.whatsapp_general_message ?? null}
-          logoUrl={settings?.logo_url ?? null}
-        />
+        <Header logoUrl={settings?.logo_url ?? null} />
         <main className="flex-1">{children}</main>
         <Footer
           settings={{
@@ -26,6 +23,10 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
             facebookUrl: settings?.facebook_url ?? null,
             instagramUrl: settings?.instagram_url ?? null,
           }}
+        />
+        <WhatsAppFloatingButton
+          phoneNumber={settings?.whatsapp_number ?? null}
+          message={settings?.whatsapp_general_message ?? "Hola! Quería hacer una consulta."}
         />
       </div>
     </CartProvider>

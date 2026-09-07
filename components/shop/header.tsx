@@ -1,16 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SearchInput } from "./search-input";
-import { WhatsAppButton } from "./whatsapp-button";
 import { CartLink } from "./cart-link";
 
 interface HeaderProps {
-  whatsappNumber: string | null;
-  whatsappMessage: string | null;
   logoUrl: string | null;
 }
 
-export function Header({ whatsappNumber, whatsappMessage, logoUrl }: HeaderProps) {
+export function Header({ logoUrl }: HeaderProps) {
   return (
     <header className="flex flex-wrap items-center gap-4 border-b p-4">
       <Link href="/" className="flex items-center text-xl font-bold text-primary">
@@ -21,10 +18,6 @@ export function Header({ whatsappNumber, whatsappMessage, logoUrl }: HeaderProps
         )}
       </Link>
       <SearchInput />
-      <WhatsAppButton
-        phoneNumber={whatsappNumber}
-        message={whatsappMessage ?? "Hola! Quería hacer una consulta."}
-      />
       <CartLink />
     </header>
   );

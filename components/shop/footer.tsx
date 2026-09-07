@@ -44,35 +44,47 @@ export function Footer({ settings }: FooterProps) {
   const hasSocialLinks = Boolean(facebookUrl || instagramUrl);
 
   return (
-    <footer className="border-t p-6 text-sm text-muted-foreground">
+    <footer className="bg-[#1f1f1f] p-6 text-sm text-neutral-300">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 text-center md:grid-cols-3 md:text-left">
         <div>
-          <p className="font-semibold text-foreground">{businessName ?? "Librería Blanco"}</p>
+          <p className="font-semibold text-white">{businessName ?? "Librería Blanco"}</p>
           <p className="mt-2">Retiro sin cargo en el local · Pago por transferencia · Mercado Pago próximamente</p>
         </div>
         <div className="flex flex-col gap-1">
-          <p className="font-semibold text-foreground">Navegación</p>
-          <Link href="/productos" className="hover:underline">
+          <p className="font-semibold text-white">Navegación</p>
+          <Link href="/productos" className="hover:text-white hover:underline">
             Productos
           </Link>
-          <Link href="/carrito" className="hover:underline">
+          <Link href="/carrito" className="hover:text-white hover:underline">
             Carrito
           </Link>
         </div>
         <div className="flex flex-col gap-1">
-          <p className="font-semibold text-foreground">Contacto</p>
+          <p className="font-semibold text-white">Contacto</p>
           {address && <p>{address}</p>}
           {businessHours && <p>{businessHours}</p>}
           {phone && <p>{phone}</p>}
           {hasSocialLinks && (
             <div className="mt-1 flex justify-center gap-3 md:justify-start">
               {facebookUrl && (
-                <a href={facebookUrl} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                <a
+                  href={facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="hover:text-white"
+                >
                   <Facebook className="h-5 w-5" />
                 </a>
               )}
               {instagramUrl && (
-                <a href={instagramUrl} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="hover:text-white"
+                >
                   <Instagram className="h-5 w-5" />
                 </a>
               )}
@@ -80,7 +92,7 @@ export function Footer({ settings }: FooterProps) {
           )}
         </div>
       </div>
-      <p className="mt-6 text-center">{`© ${new Date().getFullYear()} Librería Blanco`}</p>
+      <p className="mt-6 text-center text-neutral-400">{`© ${new Date().getFullYear()} Librería Blanco`}</p>
     </footer>
   );
 }

@@ -21,12 +21,12 @@ import { Header } from "./header";
 
 describe("Header", () => {
   it("muestra el texto 'Librería Blanco' cuando no hay logo cargado", () => {
-    render(<Header whatsappNumber={null} whatsappMessage={null} logoUrl={null} />);
+    render(<Header logoUrl={null} />);
     expect(screen.getByRole("link", { name: "Librería Blanco" })).toBeInTheDocument();
   });
 
   it("muestra la imagen del logo cuando settings.logo_url está cargado", () => {
-    render(<Header whatsappNumber={null} whatsappMessage={null} logoUrl="https://example.com/logo.png" />);
+    render(<Header logoUrl="https://example.com/logo.png" />);
     expect(screen.getByRole("img", { name: "Librería Blanco" })).toBeInTheDocument();
   });
 });
