@@ -43,6 +43,7 @@ export default async function HomePage() {
         text={settings?.hero_text ?? null}
         ctaText={settings?.hero_cta_text ?? null}
         ctaLink={settings?.hero_cta_link ?? null}
+        imageUrl={settings?.hero_image_url ?? null}
       />
 
       {categories && categories.length > 0 && (
