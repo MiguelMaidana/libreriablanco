@@ -17,7 +17,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.imageUrl && (
             <Image src={product.imageUrl} alt={product.name ?? ""} fill className="object-cover" />
           )}
-          <div className="absolute top-2 left-2 flex gap-1">
+          <div className="absolute top-2 left-2 flex flex-wrap gap-1">
             {product.is_new && <Badge>Nuevo</Badge>}
             {product.is_featured && <Badge variant="secondary">Destacado</Badge>}
           </div>
