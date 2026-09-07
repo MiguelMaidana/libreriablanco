@@ -11,7 +11,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-3 transition hover:shadow-md">
+    <div className="flex flex-col gap-2 rounded-lg border p-3 shadow-sm transition-shadow hover:shadow-md">
       <Link href={`/productos/${product.slug}`} className="flex flex-col gap-2">
         <div className="relative aspect-square overflow-hidden rounded bg-muted">
           {product.imageUrl && (
@@ -23,7 +23,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
         <p className="line-clamp-2 text-sm font-medium">{product.name}</p>
-        <p className="text-lg font-semibold text-primary">{formatPrice(product.price)}</p>
+        <p className="text-lg font-bold text-primary">{formatPrice(product.price)}</p>
       </Link>
       <AddToCartButton productId={product.id ?? ""} available={product.available ?? false} />
     </div>
