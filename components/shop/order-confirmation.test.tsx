@@ -11,11 +11,14 @@ const baseProps = {
   settings: {
     whatsappNumber: null,
     receiptMessage: null,
+    generalMessage: null,
     transferAlias: null,
     transferCbuCvu: null,
     transferBankOrWallet: null,
     transferAccountHolder: null,
     transferInstructions: null,
+    address: null,
+    businessHours: null,
   },
 };
 
@@ -63,7 +66,32 @@ describe("OrderConfirmation", () => {
         }}
       />,
     );
-    const link = screen.getByRole("link", { name: /WhatsApp/i });
+    const link = screen.getByRole("link", { name: "Enviar comprobante por WhatsApp" });
     expect(link).toHaveAttribute("href", expect.stringContaining("wa.me/5491112345678"));
+  });
+
+  it("muestra la dirección y el horario cuando están configurados", () => {
+    render(
+      <OrderConfirmation
+        {...baseProps}
+        settings={{
+          ...baseProps.settings,
+          address: "Av. Siempre Viva 742",
+          businessHours: "Lunes a viernes de 9 a 18",
+        }}
+      />,
+    );
+    expect(screen.getByText("Av. Siempre Viva 742")).toBeInTheDocument();
+    expect(screen.getByText("Lunes a viernes de 9 a 18")).toBeInTheDocument();
+  });
+
+  it("muestra el botón de consulta general por WhatsApp cuando hay número configurado", () => {
+    render(
+      <OrderConfirmation
+        {...baseProps}
+        settings={{ ...baseProps.settings, whatsappNumber: "5491112345678" }}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Consultar por WhatsApp" })).toBeInTheDocument();
   });
 });

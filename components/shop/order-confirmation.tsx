@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatPrice } from "@/lib/shop/format";
 import { buildWhatsAppUrl } from "@/lib/shop/whatsapp";
 import { Button } from "@/components/ui/button";
+import { WhatsAppButton } from "./whatsapp-button";
 
 export interface OrderConfirmationItem {
   id: string;
@@ -14,11 +15,14 @@ export interface OrderConfirmationItem {
 export interface OrderConfirmationSettings {
   whatsappNumber: string | null;
   receiptMessage: string | null;
+  generalMessage: string | null;
   transferAlias: string | null;
   transferCbuCvu: string | null;
   transferBankOrWallet: string | null;
   transferAccountHolder: string | null;
   transferInstructions: string | null;
+  address: string | null;
+  businessHours: string | null;
 }
 
 interface OrderConfirmationProps {
@@ -60,6 +64,13 @@ export function OrderConfirmation({ orderNumber, items, total, settings }: Order
         )}
       </section>
 
+      {(settings.address || settings.businessHours) && (
+        <section className="flex flex-col gap-1 text-sm text-muted-foreground">
+          {settings.address && <p>{settings.address}</p>}
+          {settings.businessHours && <p>{settings.businessHours}</p>}
+        </section>
+      )}
+
       {settings.whatsappNumber && settings.receiptMessage && (
         <Button asChild>
           <a
@@ -72,9 +83,16 @@ export function OrderConfirmation({ orderNumber, items, total, settings }: Order
         </Button>
       )}
 
-      <p className="text-sm text-muted-foreground">
-        No existe seguimiento público de pedidos. Cualquier consulta, escribinos por WhatsApp.
-      </p>
+      <div className="flex flex-col gap-2">
+        <p className="text-sm text-muted-foreground">
+          No existe seguimiento público de pedidos. Cualquier consulta, escribinos por WhatsApp.
+        </p>
+        <WhatsAppButton
+          phoneNumber={settings.whatsappNumber}
+          message={settings.generalMessage ?? "Hola! Quería hacer una consulta."}
+          label="Consultar por WhatsApp"
+        />
+      </div>
 
       <Link href="/" className="text-sm underline">
         Volver a la tienda

@@ -54,11 +54,14 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
       settings={{
         whatsappNumber: settings?.whatsapp_number ?? null,
         receiptMessage,
+        generalMessage: settings?.whatsapp_general_message ?? null,
         transferAlias: settings?.transfer_alias ?? null,
         transferCbuCvu: settings?.transfer_cbu_cvu ?? null,
         transferBankOrWallet: settings?.transfer_bank_or_wallet ?? null,
         transferAccountHolder: settings?.transfer_account_holder ?? null,
         transferInstructions: settings?.transfer_instructions ?? null,
+        address: settings?.address ?? null,
+        businessHours: settings?.business_hours ?? null,
       }}
     />
   );
