@@ -13,6 +13,7 @@ const baseParams = {
   orderNumber: "LB-1000",
   customerName: "Ana Pérez",
   customerEmail: "ana@example.com",
+  customerPhone: "1122334455",
   items: [
     { name: "Cuaderno A4", quantity: 2, unitPrice: 1000, subtotal: 2000 },
     { name: "Tijera", quantity: 1, unitPrice: 500, subtotal: 500 },
@@ -75,7 +76,19 @@ describe("sendOrderConfirmationEmail", () => {
     expect(call.html).not.toContain("<b>Producto</b>");
   });
 
-  it("incluye los datos de transferencia y de retiro cuando están configurados", async () => {
+  it("incluye los datos de contacto del cliente (nombre, teléfono, email) en la copia interna", async () => {
+    await sendOrderConfirmationEmail({
+      ...baseParams,
+      settings: { ...baseParams.settings, notificationEmail: "libreria@example.com" },
+    });
+
+    const call = mockSend.mock.calls[0]![0];
+    expect(call.html).toContain("Ana Pérez");
+    expect(call.html).toContain("1122334455");
+    expect(call.html).toContain("ana@example.com");
+  });
+
+  it("NO incluye los datos de transferencia ni de retiro en la copia interna (son datos de la propia librería)", async () => {
     await sendOrderConfirmationEmail({
       ...baseParams,
       settings: {
@@ -90,11 +103,10 @@ describe("sendOrderConfirmationEmail", () => {
     });
 
     const call = mockSend.mock.calls[0]![0];
-    expect(call.html).toContain("libreria.blanco");
-    expect(call.html).toContain("0000003100012345678901");
-    expect(call.html).toContain("Murguiondo 4230");
-    expect(call.html).toContain("Lun a Vie 9 a 18");
-    expect(call.html).toContain("Tocar timbre en la puerta lateral.");
+    expect(call.html).not.toContain("libreria.blanco");
+    expect(call.html).not.toContain("0000003100012345678901");
+    expect(call.html).not.toContain("Murguiondo 4230");
+    expect(call.html).not.toContain("Tocar timbre en la puerta lateral.");
   });
 
   it("no lanza si Resend devuelve un error", async () => {

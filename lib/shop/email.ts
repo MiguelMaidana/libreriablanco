@@ -42,6 +42,7 @@ export interface SendOrderConfirmationEmailParams {
   orderNumber: string;
   customerName: string;
   customerEmail: string;
+  customerPhone: string;
   items: OrderEmailItem[];
   total: number;
   settings: OrderEmailSettings;
@@ -57,7 +58,7 @@ function escapeHtml(value: string): string {
 }
 
 function buildOrderEmailHtml(
-  { orderNumber, customerName, items, total, settings }: SendOrderConfirmationEmailParams,
+  { orderNumber, customerName, customerEmail, customerPhone, items, total, settings }: SendOrderConfirmationEmailParams,
   audience: "customer" | "internal",
 ): string {
   const heading =
@@ -74,15 +75,23 @@ function buildOrderEmailHtml(
     )
     .join("");
 
-  const hasTransferData =
-    settings.transferBankOrWallet ||
-    settings.transferAlias ||
-    settings.transferCbuCvu ||
-    settings.transferAccountHolder ||
-    settings.transferInstructions;
+  // El cliente ve sus propios datos de contacto y de retiro/transferencia
+  // (los suyos para pagar). La librería, en cambio, ya conoce sus propios
+  // datos de transferencia y de retiro — lo que le sirve es saber quién
+  // compró y cómo contactarlo, así que recibe una sección "Cliente" en su
+  // lugar.
+  let extraSections = "";
 
-  const transferSection = hasTransferData
-    ? `
+  if (audience === "customer") {
+    const hasTransferData =
+      settings.transferBankOrWallet ||
+      settings.transferAlias ||
+      settings.transferCbuCvu ||
+      settings.transferAccountHolder ||
+      settings.transferInstructions;
+
+    if (hasTransferData) {
+      extraSections += `
       <tr>
         <td style="padding:24px 0 0 0;">
           <h2 style="font-size:15px;margin:0 0 8px 0;color:${BRAND_RED};">Datos para transferir</h2>
@@ -94,13 +103,13 @@ function buildOrderEmailHtml(
             ${settings.transferInstructions ? `<tr><td style="padding:2px 0;">${escapeHtml(settings.transferInstructions)}</td></tr>` : ""}
           </table>
         </td>
-      </tr>`
-    : "";
+      </tr>`;
+    }
 
-  const hasPickupData = settings.address || settings.businessHours || settings.pickupInstructions;
+    const hasPickupData = settings.address || settings.businessHours || settings.pickupInstructions;
 
-  const pickupSection = hasPickupData
-    ? `
+    if (hasPickupData) {
+      extraSections += `
       <tr>
         <td style="padding:24px 0 0 0;">
           <h2 style="font-size:15px;margin:0 0 8px 0;color:${BRAND_RED};">Retiro</h2>
@@ -110,8 +119,21 @@ function buildOrderEmailHtml(
             ${settings.pickupInstructions ? `<tr><td style="padding:2px 0;">${escapeHtml(settings.pickupInstructions)}</td></tr>` : ""}
           </table>
         </td>
-      </tr>`
-    : "";
+      </tr>`;
+    }
+  } else {
+    extraSections += `
+      <tr>
+        <td style="padding:24px 0 0 0;">
+          <h2 style="font-size:15px;margin:0 0 8px 0;color:${BRAND_RED};">Cliente</h2>
+          <table role="presentation" width="100%" style="font-size:14px;color:#333;">
+            <tr><td style="padding:2px 0;">${escapeHtml(customerName)}</td></tr>
+            <tr><td style="padding:2px 0;">Tel: ${escapeHtml(customerPhone)}</td></tr>
+            <tr><td style="padding:2px 0;">${escapeHtml(customerEmail)}</td></tr>
+          </table>
+        </td>
+      </tr>`;
+  }
 
   return `
     <table role="presentation" width="100%" style="background-color:#f4f4f5;padding:32px 0;font-family:Arial,Helvetica,sans-serif;">
@@ -145,8 +167,7 @@ function buildOrderEmailHtml(
                       </table>
                     </td>
                   </tr>
-                  ${transferSection}
-                  ${pickupSection}
+                  ${extraSections}
                 </table>
               </td>
             </tr>

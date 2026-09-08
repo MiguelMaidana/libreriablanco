@@ -115,6 +115,7 @@ export async function createOrder(
       orderNumber,
       customerName: `${firstName} ${lastName}`,
       customerEmail: email,
+      customerPhone: phone,
       items: emailItems,
       total,
       settings: {

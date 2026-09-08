@@ -161,6 +161,7 @@ describe("createOrder", () => {
         orderNumber: "LB-1000",
         customerName: "Ana Pérez",
         customerEmail: "ana@example.com",
+        customerPhone: "1122334455",
         items: [{ name: "Cuaderno A4", quantity: 2, unitPrice: 999, subtotal: 1998 }],
         total: 1998,
         settings: expect.objectContaining({
