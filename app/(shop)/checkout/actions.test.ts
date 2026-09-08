@@ -8,8 +8,10 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({ from: mockAnonFrom })),
 }));
 
+const mockServiceMaybeSingle = vi.fn();
+const mockServiceEq = vi.fn(() => ({ maybeSingle: mockServiceMaybeSingle }));
 const mockServiceIn = vi.fn();
-const mockServiceSelect = vi.fn(() => ({ in: mockServiceIn }));
+const mockServiceSelect = vi.fn(() => ({ in: mockServiceIn, eq: mockServiceEq }));
 const mockServiceFrom = vi.fn(() => ({ select: mockServiceSelect }));
 const mockRpc = vi.fn();
 
@@ -50,6 +52,9 @@ describe("createOrder", () => {
     mockServiceFrom.mockClear();
     mockServiceSelect.mockClear();
     mockServiceIn.mockReset();
+    mockServiceEq.mockClear();
+    mockServiceMaybeSingle.mockReset();
+    mockServiceMaybeSingle.mockResolvedValue({ data: { id: "order-uuid-1" }, error: null });
     mockRpc.mockReset();
     mockGetSettings.mockReset();
     mockGetSettings.mockResolvedValue(null);
@@ -158,6 +163,7 @@ describe("createOrder", () => {
 
     expect(mockSendOrderConfirmationEmail).toHaveBeenCalledWith(
       expect.objectContaining({
+        orderId: "order-uuid-1",
         orderNumber: "LB-1000",
         customerName: "Ana Pérez",
         customerEmail: "ana@example.com",
@@ -169,6 +175,22 @@ describe("createOrder", () => {
           notificationEmail: "libreria@example.com",
         }),
       }),
+    );
+  });
+
+  it("manda orderId null si no se pudo resolver el uuid del pedido recién creado", async () => {
+    mockAnonIn.mockResolvedValue({ data: [{ id: "p1", price: 999 }], error: null });
+    mockServiceIn.mockResolvedValue({
+      data: [{ id: "p1", name: "Cuaderno A4", sku: "CUA-001", cost: 500 }],
+      error: null,
+    });
+    mockRpc.mockResolvedValue({ data: [{ order_number: "LB-1000" }], error: null });
+    mockServiceMaybeSingle.mockResolvedValue({ data: null, error: null });
+
+    await createOrder({ error: null, orderNumber: null }, buildFormData());
+
+    expect(mockSendOrderConfirmationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ orderId: null }),
     );
   });
 

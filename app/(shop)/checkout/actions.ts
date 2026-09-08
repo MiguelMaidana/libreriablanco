@@ -98,6 +98,16 @@ export async function createOrder(
 
   const orderNumber = rpcResult[0]!.order_number;
 
+  // create_guest_order no devuelve el id (uuid) del pedido, solo su número
+  // legible -- hace falta el uuid para el link "Ir al pedido" del mail
+  // interno, que apunta a /admin/pedidos/[id]. Una consulta extra en vez de
+  // tocar la función RPC (que ya corre como security definer).
+  const { data: orderRow } = await serviceClient
+    .from("orders")
+    .select("id")
+    .eq("order_number", orderNumber)
+    .maybeSingle();
+
   // El pedido ya está creado en este punto — un fallo al mandar el email de
   // confirmación (sendOrderConfirmationEmail nunca lanza, ver lib/shop/email.ts)
   // nunca debe hacer que el checkout falle ni que se pierda el pedido.
@@ -112,6 +122,7 @@ export async function createOrder(
 
   try {
     await sendOrderConfirmationEmail({
+      orderId: orderRow?.id ?? null,
       orderNumber,
       customerName: `${firstName} ${lastName}`,
       customerEmail: email,

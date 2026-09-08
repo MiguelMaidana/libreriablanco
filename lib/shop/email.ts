@@ -19,6 +19,10 @@ const CUSTOMER_EMAIL_ENABLED = false;
 const BRAND_RED = "#dc2626";
 const FOOTER_DARK = "#1f1f1f";
 
+// Dominio de producción — mismo criterio que FROM_ADDRESS: hardcodeado por
+// ahora, sin una variable de entorno dedicada a la URL del sitio.
+const SITE_URL = "https://libreriablanco.vercel.app";
+
 export interface OrderEmailItem {
   name: string;
   quantity: number;
@@ -39,6 +43,7 @@ export interface OrderEmailSettings {
 }
 
 export interface SendOrderConfirmationEmailParams {
+  orderId: string | null;
   orderNumber: string;
   customerName: string;
   customerEmail: string;
@@ -58,7 +63,7 @@ function escapeHtml(value: string): string {
 }
 
 function buildOrderEmailHtml(
-  { orderNumber, customerName, customerEmail, customerPhone, items, total, settings }: SendOrderConfirmationEmailParams,
+  { orderId, orderNumber, customerName, customerEmail, customerPhone, items, total, settings }: SendOrderConfirmationEmailParams,
   audience: "customer" | "internal",
 ): string {
   const heading =
@@ -133,6 +138,15 @@ function buildOrderEmailHtml(
           </table>
         </td>
       </tr>`;
+
+    if (orderId) {
+      extraSections += `
+      <tr>
+        <td style="padding:24px 0 0 0;" align="center">
+          <a href="${SITE_URL}/admin/pedidos/${orderId}" style="display:inline-block;background-color:${BRAND_RED};color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-size:14px;font-weight:bold;">Ir al pedido</a>
+        </td>
+      </tr>`;
+    }
   }
 
   return `

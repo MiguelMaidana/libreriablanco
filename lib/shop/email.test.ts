@@ -10,6 +10,7 @@ vi.mock("resend", () => ({
 import { sendOrderConfirmationEmail } from "./email";
 
 const baseParams = {
+  orderId: "order-uuid-1",
   orderNumber: "LB-1000",
   customerName: "Ana Pérez",
   customerEmail: "ana@example.com",
@@ -86,6 +87,28 @@ describe("sendOrderConfirmationEmail", () => {
     expect(call.html).toContain("Ana Pérez");
     expect(call.html).toContain("1122334455");
     expect(call.html).toContain("ana@example.com");
+  });
+
+  it("incluye un botón 'Ir al pedido' con el link al panel admin cuando hay orderId", async () => {
+    await sendOrderConfirmationEmail({
+      ...baseParams,
+      settings: { ...baseParams.settings, notificationEmail: "libreria@example.com" },
+    });
+
+    const call = mockSend.mock.calls[0]![0];
+    expect(call.html).toContain("Ir al pedido");
+    expect(call.html).toContain("https://libreriablanco.vercel.app/admin/pedidos/order-uuid-1");
+  });
+
+  it("no incluye el botón 'Ir al pedido' cuando no se pudo resolver el orderId", async () => {
+    await sendOrderConfirmationEmail({
+      ...baseParams,
+      orderId: null,
+      settings: { ...baseParams.settings, notificationEmail: "libreria@example.com" },
+    });
+
+    const call = mockSend.mock.calls[0]![0];
+    expect(call.html).not.toContain("Ir al pedido");
   });
 
   it("NO incluye los datos de transferencia ni de retiro en la copia interna (son datos de la propia librería)", async () => {
