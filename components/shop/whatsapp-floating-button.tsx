@@ -1,9 +1,14 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { buildWhatsAppUrl } from "@/lib/shop/whatsapp";
 
 interface WhatsAppFloatingButtonProps {
   phoneNumber: string | null;
   message: string;
 }
+
+const FORM_FIELD_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -14,6 +19,27 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 export function WhatsAppFloatingButton({ phoneNumber, message }: WhatsAppFloatingButtonProps) {
+  const [fieldFocused, setFieldFocused] = useState(false);
+
+  useEffect(() => {
+    function handleFocusIn(event: FocusEvent) {
+      if (FORM_FIELD_TAGS.has((event.target as HTMLElement).tagName)) {
+        setFieldFocused(true);
+      }
+    }
+    function handleFocusOut(event: FocusEvent) {
+      if (FORM_FIELD_TAGS.has((event.target as HTMLElement).tagName)) {
+        setFieldFocused(false);
+      }
+    }
+    document.addEventListener("focusin", handleFocusIn);
+    document.addEventListener("focusout", handleFocusOut);
+    return () => {
+      document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("focusout", handleFocusOut);
+    };
+  }, []);
+
   if (!phoneNumber) {
     return null;
   }
@@ -24,9 +50,13 @@ export function WhatsAppFloatingButton({ phoneNumber, message }: WhatsAppFloatin
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Escribinos por WhatsApp"
-      className="fixed right-6 bottom-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 hover:bg-[#1ebe5b]"
+      aria-hidden={fieldFocused}
+      tabIndex={fieldFocused ? -1 : 0}
+      className={`fixed right-4 bottom-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 hover:bg-[#1ebe5b] md:right-6 md:bottom-6 md:h-14 md:w-14 ${
+        fieldFocused ? "pointer-events-none scale-0 opacity-0" : "scale-100 opacity-100"
+      }`}
     >
-      <WhatsAppIcon className="h-7 w-7" />
+      <WhatsAppIcon className="h-6 w-6 md:h-7 md:w-7" />
     </a>
   );
 }
