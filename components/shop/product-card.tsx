@@ -25,7 +25,11 @@ export function ProductCard({ product }: ProductCardProps) {
         <p className="line-clamp-2 text-sm font-medium">{product.name}</p>
         <p className="text-lg font-bold text-primary">{formatPrice(product.price)}</p>
       </Link>
-      <AddToCartButton productId={product.id ?? ""} available={product.available ?? false} />
+      <AddToCartButton
+        productId={product.id ?? ""}
+        productName={product.name ?? ""}
+        available={product.available ?? false}
+      />
     </div>
   );
 }

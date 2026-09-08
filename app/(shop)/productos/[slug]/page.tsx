@@ -86,7 +86,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <p className={product.available ? "text-green-600" : "text-destructive"}>
             {product.available ? "Disponible" : "No disponible"}
           </p>
-          <AddToCartButton productId={product.id ?? ""} available={product.available ?? false} />
+          <AddToCartButton
+            productId={product.id ?? ""}
+            productName={product.name ?? ""}
+            available={product.available ?? false}
+          />
           {product.full_description && (
             <p className="text-muted-foreground">{product.full_description}</p>
           )}
