@@ -19,7 +19,7 @@ describe("checkoutSchema", () => {
     }
   });
 
-  it("phone vacío se convierte en null", () => {
+  it("rechaza un teléfono vacío", () => {
     const result = checkoutSchema.safeParse({
       firstName: "Ana",
       lastName: "Pérez",
@@ -27,9 +27,30 @@ describe("checkoutSchema", () => {
       phone: "",
       items: validItems,
     });
+    expect(result.success).toBe(false);
+  });
+
+  it("rechaza un teléfono ausente", () => {
+    const result = checkoutSchema.safeParse({
+      firstName: "Ana",
+      lastName: "Pérez",
+      email: "ana@example.com",
+      items: validItems,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("recorta espacios del teléfono", () => {
+    const result = checkoutSchema.safeParse({
+      firstName: "Ana",
+      lastName: "Pérez",
+      email: "ana@example.com",
+      phone: "  1122334455  ",
+      items: validItems,
+    });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.phone).toBeNull();
+      expect(result.data.phone).toBe("1122334455");
     }
   });
 

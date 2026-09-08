@@ -51,6 +51,12 @@ describe("OrderConfirmation", () => {
     expect(screen.getByText(/0000003100012345678901/)).toBeInTheDocument();
   });
 
+  it("aclara que el envío del comprobante es opcional y que se puede pagar al retirar", () => {
+    render(<OrderConfirmation {...baseProps} />);
+    expect(screen.getByText(/no es obligatorio/i)).toBeInTheDocument();
+    expect(screen.getByText(/pagar al retirar/i)).toBeInTheDocument();
+  });
+
   it("no muestra el botón de WhatsApp si falta el número o el mensaje", () => {
     render(<OrderConfirmation {...baseProps} />);
     expect(screen.queryByRole("link", { name: /WhatsApp/i })).not.toBeInTheDocument();

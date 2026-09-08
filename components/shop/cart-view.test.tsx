@@ -73,15 +73,15 @@ describe("CartView", () => {
     expect(mockRemoveItem).toHaveBeenCalledWith("p1");
   });
 
-  it("deshabilita 'Continuar con la compra' si ningún producto está disponible", async () => {
+  it("deshabilita 'Ir a pagar' si ningún producto está disponible", async () => {
     mockItems = [{ productId: "p1", quantity: 1 }];
     mockGetCartProducts.mockResolvedValue([]);
     render(<CartView whatsappNumber={null} shippingMessage={null} />);
     await screen.findByText(/ya no están disponibles/i);
-    expect(screen.getByRole("button", { name: "Continuar con la compra" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Ir a pagar" })).toBeDisabled();
   });
 
-  it("deshabilita 'Continuar con la compra' si hay al menos un producto no disponible, aunque otro sí lo esté", async () => {
+  it("deshabilita 'Ir a pagar' si hay al menos un producto no disponible, aunque otro sí lo esté", async () => {
     // createOrder es todo-o-nada: si dejáramos avanzar a checkout con un
     // item no disponible en el carrito, el pedido completo sería
     // rechazado igual. CartView debe reflejar esa regla, no solo
@@ -93,15 +93,15 @@ describe("CartView", () => {
     mockGetCartProducts.mockResolvedValue([cuaderno]);
     render(<CartView whatsappNumber={null} shippingMessage={null} />);
     await screen.findByText(/ya no están disponibles/i);
-    expect(screen.getByRole("button", { name: "Continuar con la compra" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Ir a pagar" })).toBeDisabled();
   });
 
-  it("habilita 'Continuar con la compra' como link cuando hay productos disponibles", async () => {
+  it("habilita 'Ir a pagar' como link cuando hay productos disponibles", async () => {
     mockItems = [{ productId: "p1", quantity: 1 }];
     mockGetCartProducts.mockResolvedValue([cuaderno]);
     render(<CartView whatsappNumber={null} shippingMessage={null} />);
     await screen.findByText("Cuaderno A4");
-    expect(screen.getByRole("link", { name: "Continuar con la compra" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Ir a pagar" })).toHaveAttribute(
       "href",
       "/checkout",
     );

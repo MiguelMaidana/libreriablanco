@@ -63,6 +63,10 @@ export function OrderConfirmation({ orderNumber, items, total, settings }: Order
         {settings.transferInstructions && (
           <p className="text-sm text-muted-foreground">{settings.transferInstructions}</p>
         )}
+        <p className="text-sm text-muted-foreground">
+          Realizá la transferencia con estos datos. Si querés, podés mandarnos el comprobante por
+          WhatsApp — no es obligatorio, también podés pagar al retirar tu pedido.
+        </p>
       </section>
 
       {(settings.address || settings.businessHours || settings.pickupInstructions) && (

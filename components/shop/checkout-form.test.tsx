@@ -104,6 +104,7 @@ describe("CheckoutForm", () => {
     await user.type(screen.getByLabelText("Nombre"), "Ana");
     await user.type(screen.getByLabelText("Apellido"), "Pérez");
     await user.type(screen.getByLabelText("Email"), "ana@example.com");
+    await user.type(screen.getByLabelText("Teléfono"), "1122334455");
     await user.click(screen.getByRole("button", { name: "Confirmar pedido" }));
 
     expect(await screen.findByText(/ya no están disponibles/i)).toBeInTheDocument();
@@ -128,6 +129,7 @@ describe("CheckoutForm", () => {
     await user.type(screen.getByLabelText("Nombre"), "Ana");
     await user.type(screen.getByLabelText("Apellido"), "Pérez");
     await user.type(screen.getByLabelText("Email"), "ana@example.com");
+    await user.type(screen.getByLabelText("Teléfono"), "1122334455");
     await user.click(screen.getByRole("button", { name: "Confirmar pedido" }));
 
     await vi.waitFor(() => expect(mockClear).toHaveBeenCalled());

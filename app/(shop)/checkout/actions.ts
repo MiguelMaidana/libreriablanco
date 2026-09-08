@@ -85,12 +85,7 @@ export async function createOrder(
     p_first_name: firstName,
     p_last_name: lastName,
     p_email: email,
-    // El tipo generado marca `p_phone` como `string` (no `string | null`)
-    // porque los parámetros de funciones de Postgres no exponen su
-    // nulabilidad al generador de tipos, pero la función SQL sí acepta
-    // NULL (columna `customers.phone` es nullable). `phone` es
-    // legítimamente `string | null` (checkoutSchema lo normaliza así).
-    p_phone: phone as string,
+    p_phone: phone,
     p_items: orderItems,
   });
 

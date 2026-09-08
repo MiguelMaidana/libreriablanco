@@ -11,8 +11,8 @@ export const checkoutSchema = z.object({
   email: z.string().email("Ingresá un email válido."),
   phone: z
     .string()
-    .optional()
-    .transform((value) => (value && value.trim().length > 0 ? value.trim() : null)),
+    .trim()
+    .min(6, "Ingresá tu teléfono."),
   items: z
     .string()
     .transform((value, ctx) => {

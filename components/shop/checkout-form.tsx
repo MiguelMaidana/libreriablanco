@@ -151,8 +151,8 @@ export function CheckoutForm({
           <Input id="email" name="email" type="email" required />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="phone">Teléfono (opcional)</Label>
-          <Input id="phone" name="phone" type="tel" />
+          <Label htmlFor="phone">Teléfono</Label>
+          <Input id="phone" name="phone" type="tel" required />
         </div>
         {state.error && <p className="text-sm text-destructive">{state.error}</p>}
         <Button type="submit" disabled={pending}>

@@ -78,7 +78,7 @@ export function CartView({ whatsappNumber, shippingMessage }: CartViewProps) {
       {hasUnavailableItems && (
         <p className="rounded border border-destructive p-3 text-sm text-destructive">
           Algunos productos de tu carrito ya no están disponibles. Quitalos del carrito para
-          poder continuar a checkout.
+          poder continuar.
         </p>
       )}
 
@@ -152,11 +152,11 @@ export function CartView({ whatsappNumber, shippingMessage }: CartViewProps) {
       <div className="flex flex-col gap-2 sm:flex-row">
         {!hasUnavailableItems ? (
           <Button asChild>
-            <Link href="/checkout">Continuar con la compra</Link>
+            <Link href="/checkout">Ir a pagar</Link>
           </Button>
         ) : (
           <Button type="button" disabled>
-            Continuar con la compra
+            Ir a pagar
           </Button>
         )}
         <Button asChild variant="outline">

@@ -24,7 +24,7 @@ function buildFormData(overrides: Record<string, string> = {}) {
   formData.set("firstName", overrides.firstName ?? "Ana");
   formData.set("lastName", overrides.lastName ?? "Pérez");
   formData.set("email", overrides.email ?? "ana@example.com");
-  formData.set("phone", overrides.phone ?? "");
+  formData.set("phone", overrides.phone ?? "1122334455");
   formData.set(
     "items",
     overrides.items ?? JSON.stringify([{ productId: "p1", quantity: 2 }]),
@@ -47,6 +47,16 @@ describe("createOrder", () => {
     const result = await createOrder(
       { error: null, orderNumber: null },
       buildFormData({ email: "no-valido" }),
+    );
+    expect(result.error).toBeTruthy();
+    expect(result.orderNumber).toBeNull();
+    expect(mockAnonFrom).not.toHaveBeenCalled();
+  });
+
+  it("devuelve error de validación si falta el teléfono", async () => {
+    const result = await createOrder(
+      { error: null, orderNumber: null },
+      buildFormData({ phone: "" }),
     );
     expect(result.error).toBeTruthy();
     expect(result.orderNumber).toBeNull();
