@@ -1,14 +1,24 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getViewAccess } from "@/lib/auth/permissions";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice, formatDate } from "@/lib/shop/format";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_BADGE_VARIANT } from "@/lib/admin/orders";
+import { ViewGuardMessage } from "@/components/admin/view-guard-message";
 
 interface CustomerDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function CustomerDetailPage({ params }: CustomerDetailPageProps) {
+  const { allowed, admin } = await getViewAccess("clientes");
+  if (!admin) {
+    return <ViewGuardMessage title="Cliente" message="No pudimos verificar tu sesión." />;
+  }
+  if (!allowed) {
+    return <ViewGuardMessage title="Cliente" message="No tenés permiso para ver esta página." />;
+  }
+
   const { id } = await params;
   const supabase = await createClient();
 

@@ -1,13 +1,25 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getViewAccess } from "@/lib/auth/permissions";
 import { ProductForm } from "@/components/admin/product-form";
 import { ProductImageManager } from "@/components/admin/product-image-manager";
+import { ViewGuardMessage } from "@/components/admin/view-guard-message";
 
 interface EditProductPageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function EditProductPage({ params }: EditProductPageProps) {
+  const { allowed, admin } = await getViewAccess("productos");
+  if (!admin) {
+    return <ViewGuardMessage title="Editar producto" message="No pudimos verificar tu sesión." />;
+  }
+  if (!allowed) {
+    return (
+      <ViewGuardMessage title="Editar producto" message="No tenés permiso para ver esta página." />
+    );
+  }
+
   const { id } = await params;
   const supabase = await createClient();
 

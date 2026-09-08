@@ -64,6 +64,63 @@ export async function requirePermission(
   return admin;
 }
 
+export async function getViewAccess(
+  module: PermissionModule,
+): Promise<{ allowed: boolean; admin: AdminProfile | null }> {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    return { allowed: false, admin: null };
+  }
+
+  if (admin.roles.includes("SUPER_ADMIN")) {
+    return { allowed: true, admin };
+  }
+
+  const supabase = await createClient();
+  const { data: allowed, error } = await supabase.rpc("has_permission", {
+    p_user_id: admin.id,
+    p_module: module,
+    p_action: "ver",
+  });
+
+  if (error) {
+    console.error("getViewAccess: error calling has_permission", error);
+  }
+
+  return { allowed: Boolean(allowed), admin };
+}
+
+// Variante en lote de getViewAccess para el layout, que ya resolvió el admin
+// una vez y necesita el mapa "ver" de varios módulos a la vez (para decidir
+// qué links de la sidebar mostrar) sin repetir esa resolución por módulo.
+export async function getViewPermissions(
+  admin: AdminProfile,
+  modules: PermissionModule[],
+): Promise<Partial<Record<PermissionModule, boolean>>> {
+  if (admin.roles.includes("SUPER_ADMIN")) {
+    return Object.fromEntries(modules.map((module) => [module, true]));
+  }
+
+  const supabase = await createClient();
+  const entries = await Promise.all(
+    modules.map(async (module) => {
+      const { data: allowed, error } = await supabase.rpc("has_permission", {
+        p_user_id: admin.id,
+        p_module: module,
+        p_action: "ver",
+      });
+
+      if (error) {
+        console.error("getViewPermissions: error calling has_permission", error);
+      }
+
+      return [module, Boolean(allowed)] as const;
+    }),
+  );
+
+  return Object.fromEntries(entries);
+}
+
 export async function withPermission<T>(
   module: PermissionModule,
   action: PermissionAction,

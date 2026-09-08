@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
+import { getViewAccess } from "@/lib/auth/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ProductQuickActions } from "@/components/admin/product-quick-actions";
+import { ViewGuardMessage } from "@/components/admin/view-guard-message";
 
 type FilterKey = "todos" | "publicados" | "no-disponibles" | "destacados";
 
@@ -22,6 +24,14 @@ interface ProductsPageProps {
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
+  const { allowed, admin } = await getViewAccess("productos");
+  if (!admin) {
+    return <ViewGuardMessage title="Productos" message="No pudimos verificar tu sesión." />;
+  }
+  if (!allowed) {
+    return <ViewGuardMessage title="Productos" message="No tenés permiso para ver esta página." />;
+  }
+
   const { filtro, q } = await searchParams;
   const filter = (filtro as FilterKey) ?? "todos";
 

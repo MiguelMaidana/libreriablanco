@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getViewAccess } from "@/lib/auth/permissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatPrice, formatDateTime } from "@/lib/shop/format";
@@ -7,12 +8,21 @@ import { buildWhatsAppUrl } from "@/lib/shop/whatsapp";
 import { buildOrderContactMessage, normalizeArgentinePhone } from "@/lib/admin/whatsapp";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_BADGE_VARIANT } from "@/lib/admin/orders";
 import { OrderStatusActions } from "@/components/admin/order-status-actions";
+import { ViewGuardMessage } from "@/components/admin/view-guard-message";
 
 interface OrderDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
+  const { allowed, admin } = await getViewAccess("pedidos");
+  if (!admin) {
+    return <ViewGuardMessage title="Pedido" message="No pudimos verificar tu sesión." />;
+  }
+  if (!allowed) {
+    return <ViewGuardMessage title="Pedido" message="No tenés permiso para ver esta página." />;
+  }
+
   const { id } = await params;
   const supabase = await createClient();
 

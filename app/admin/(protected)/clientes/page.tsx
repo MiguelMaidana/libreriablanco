@@ -1,14 +1,24 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getViewAccess } from "@/lib/auth/permissions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/shop/format";
+import { ViewGuardMessage } from "@/components/admin/view-guard-message";
 
 interface CustomersPageProps {
   searchParams: Promise<{ q?: string }>;
 }
 
 export default async function CustomersPage({ searchParams }: CustomersPageProps) {
+  const { allowed, admin } = await getViewAccess("clientes");
+  if (!admin) {
+    return <ViewGuardMessage title="Clientes" message="No pudimos verificar tu sesión." />;
+  }
+  if (!allowed) {
+    return <ViewGuardMessage title="Clientes" message="No tenés permiso para ver esta página." />;
+  }
+
   const { q } = await searchParams;
 
   const supabase = await createClient();

@@ -12,6 +12,8 @@ vi.mock("@/lib/supabase/server", () => ({
 
 import {
   getCurrentAdmin,
+  getViewAccess,
+  getViewPermissions,
   requirePermission,
   requireSuperAdmin,
   ForbiddenError,
@@ -297,6 +299,115 @@ describe("requireSuperAdmin", () => {
     await requireSuperAdmin();
 
     expect(mockRpc).toHaveBeenCalledWith("is_super_admin", { p_user_id: "u1" });
+  });
+});
+
+describe("getViewAccess", () => {
+  beforeEach(() => {
+    mockRpc.mockReset();
+  });
+
+  it("devuelve allowed:false y admin:null si no hay admin logueado", async () => {
+    mockRpc.mockReturnValue({
+      maybeSingle: async () => ({ data: null, error: null }),
+    });
+
+    const result = await getViewAccess("productos");
+    expect(result).toEqual({ allowed: false, admin: null });
+  });
+
+  it("devuelve allowed:true sin llamar a has_permission si es SUPER_ADMIN", async () => {
+    mockRpc.mockImplementation((fn: string) => {
+      if (fn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Jessica", is_active: true, role_names: ["SUPER_ADMIN"] },
+            error: null,
+          }),
+        };
+      }
+      throw new Error(`no debería llamarse a ${fn}`);
+    });
+
+    const result = await getViewAccess("clientes");
+    expect(result.allowed).toBe(true);
+    expect(result.admin?.fullName).toBe("Jessica");
+  });
+
+  it("consulta has_permission con acción 'ver' para roles no super admin", async () => {
+    mockRpc.mockImplementation((fn: string) => {
+      if (fn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Vendedora", is_active: true, role_names: ["Vendedora"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: true, error: null });
+    });
+
+    const result = await getViewAccess("pedidos");
+
+    expect(result).toEqual({
+      allowed: true,
+      admin: { id: "u1", fullName: "Vendedora", roles: ["Vendedora"] },
+    });
+    expect(mockRpc).toHaveBeenCalledWith("has_permission", {
+      p_user_id: "u1",
+      p_module: "pedidos",
+      p_action: "ver",
+    });
+  });
+
+  it("devuelve allowed:false si has_permission devuelve false", async () => {
+    mockRpc.mockImplementation((fn: string) => {
+      if (fn === "get_my_admin_profile") {
+        return {
+          maybeSingle: async () => ({
+            data: { id: "u1", full_name: "Vendedora", is_active: true, role_names: ["Vendedora"] },
+            error: null,
+          }),
+        };
+      }
+      return Promise.resolve({ data: false, error: null });
+    });
+
+    const result = await getViewAccess("configuracion");
+    expect(result.allowed).toBe(false);
+  });
+});
+
+describe("getViewPermissions", () => {
+  beforeEach(() => {
+    mockRpc.mockReset();
+  });
+
+  it("devuelve true para todos los módulos pedidos si es SUPER_ADMIN, sin llamar a has_permission", async () => {
+    const admin = { id: "u1", fullName: "Jessica", roles: ["SUPER_ADMIN"] };
+
+    const result = await getViewPermissions(admin, ["productos", "pedidos", "clientes"]);
+
+    expect(result).toEqual({ productos: true, pedidos: true, clientes: true });
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("consulta has_permission por cada módulo pedido para roles no super admin", async () => {
+    const admin = { id: "u1", fullName: "Vendedora", roles: ["Vendedora"] };
+    mockRpc.mockImplementation((fn: string, args: { p_module: string }) => {
+      expect(fn).toBe("has_permission");
+      return Promise.resolve({ data: args.p_module === "pedidos", error: null });
+    });
+
+    const result = await getViewPermissions(admin, ["productos", "pedidos"]);
+
+    expect(result).toEqual({ productos: false, pedidos: true });
+    expect(mockRpc).toHaveBeenCalledTimes(2);
+    expect(mockRpc).toHaveBeenCalledWith("has_permission", {
+      p_user_id: "u1",
+      p_module: "productos",
+      p_action: "ver",
+    });
   });
 });
 

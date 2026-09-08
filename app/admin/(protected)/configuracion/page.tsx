@@ -1,9 +1,21 @@
 import { getSettings } from "@/lib/shop/settings";
+import { getViewAccess } from "@/lib/auth/permissions";
 import { SettingsForm } from "@/components/admin/settings-form";
 import { SettingsImageUpload } from "@/components/admin/settings-image-upload";
+import { ViewGuardMessage } from "@/components/admin/view-guard-message";
 import { uploadLogo, uploadHeroImage } from "./image-actions";
 
 export default async function SettingsPage() {
+  const { allowed, admin } = await getViewAccess("configuracion");
+  if (!admin) {
+    return <ViewGuardMessage title="Configuración" message="No pudimos verificar tu sesión." />;
+  }
+  if (!allowed) {
+    return (
+      <ViewGuardMessage title="Configuración" message="No tenés permiso para ver esta página." />
+    );
+  }
+
   const settings = await getSettings();
 
   if (!settings) {

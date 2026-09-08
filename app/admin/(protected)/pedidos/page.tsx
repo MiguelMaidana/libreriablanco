@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getViewAccess } from "@/lib/auth/permissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatPrice, formatDateTime } from "@/lib/shop/format";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_BADGE_VARIANT } from "@/lib/admin/orders";
+import { ViewGuardMessage } from "@/components/admin/view-guard-message";
 
 type OrderFilter = "nuevos" | "finalizados" | "cancelados" | "todos";
 
@@ -26,6 +28,14 @@ interface OrdersPageProps {
 }
 
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
+  const { allowed, admin } = await getViewAccess("pedidos");
+  if (!admin) {
+    return <ViewGuardMessage title="Pedidos" message="No pudimos verificar tu sesión." />;
+  }
+  if (!allowed) {
+    return <ViewGuardMessage title="Pedidos" message="No tenés permiso para ver esta página." />;
+  }
+
   const { filtro } = await searchParams;
   const filter = (filtro as OrderFilter) ?? "nuevos";
 

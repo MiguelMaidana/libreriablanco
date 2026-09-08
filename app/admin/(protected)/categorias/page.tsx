@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getViewAccess } from "@/lib/auth/permissions";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -10,8 +11,21 @@ import {
 } from "@/components/ui/table";
 import { CategoryDialog } from "@/components/admin/category-dialog";
 import { CategoryActiveToggle } from "@/components/admin/category-active-toggle";
+import { ViewGuardMessage } from "@/components/admin/view-guard-message";
 
 export default async function CategoriesPage() {
+  // Categorías comparte el módulo de permisos "productos" — así ya gatean
+  // sus mutaciones en app/admin/(protected)/categorias/actions.ts.
+  const { allowed, admin } = await getViewAccess("productos");
+  if (!admin) {
+    return <ViewGuardMessage title="Categorías" message="No pudimos verificar tu sesión." />;
+  }
+  if (!allowed) {
+    return (
+      <ViewGuardMessage title="Categorías" message="No tenés permiso para ver esta página." />
+    );
+  }
+
   const supabase = await createClient();
   const { data: categories, error } = await supabase
     .from("categories")

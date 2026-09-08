@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-const { mockGetUser, mockGetCurrentAdmin } = vi.hoisted(() => ({
+const { mockGetUser, mockGetCurrentAdmin, mockGetViewPermissions } = vi.hoisted(() => ({
   mockGetUser: vi.fn(),
   mockGetCurrentAdmin: vi.fn(),
+  mockGetViewPermissions: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -14,6 +15,7 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/auth/permissions", () => ({
   getCurrentAdmin: mockGetCurrentAdmin,
+  getViewPermissions: mockGetViewPermissions,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -28,6 +30,8 @@ describe("ProtectedAdminLayout", () => {
   beforeEach(() => {
     mockGetUser.mockReset();
     mockGetCurrentAdmin.mockReset();
+    mockGetViewPermissions.mockReset();
+    mockGetViewPermissions.mockResolvedValue({});
   });
 
   it("redirige a /admin/login si no hay sesión", async () => {
