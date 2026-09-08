@@ -8,4 +8,19 @@ describe("CategoryPill", () => {
     const link = screen.getByRole("link", { name: /Cuadernos/i });
     expect(link).toHaveAttribute("href", "/categoria/cuadernos");
   });
+
+  it("usa un ícono y color distintos para una categoría conocida", () => {
+    const { container } = render(<CategoryPill name="Arte" slug="arte" />);
+    expect(container.querySelector(".bg-pink-100")).toBeInTheDocument();
+  });
+
+  it("no distingue mayúsculas ni espacios extra al matchear el nombre", () => {
+    const { container } = render(<CategoryPill name="  ARTE  " slug="arte" />);
+    expect(container.querySelector(".bg-pink-100")).toBeInTheDocument();
+  });
+
+  it("usa el ícono genérico para una categoría sin mapeo conocido", () => {
+    const { container } = render(<CategoryPill name="Categoría inventada" slug="inventada" />);
+    expect(container.querySelector(".bg-muted")).toBeInTheDocument();
+  });
 });
