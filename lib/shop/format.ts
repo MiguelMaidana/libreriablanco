@@ -15,3 +15,16 @@ export function formatDate(value: string | Date): string {
   const date = typeof value === "string" ? new Date(value) : value;
   return date.toLocaleDateString("es-AR", { timeZone: ARGENTINA_TIMEZONE });
 }
+
+export function formatDateTime(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  return date.toLocaleString("es-AR", {
+    timeZone: ARGENTINA_TIMEZONE,
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}

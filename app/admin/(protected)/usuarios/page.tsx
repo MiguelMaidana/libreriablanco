@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCurrentAdmin } from "@/lib/auth/permissions";
@@ -10,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserDialog } from "@/components/admin/user-dialog";
 import { UserRowActions } from "@/components/admin/user-row-actions";
 
@@ -87,8 +89,21 @@ export default async function UsersPage() {
 
   return (
     <main className="flex flex-col gap-6 p-6">
+      <h1 className="text-2xl">Usuarios y Roles</h1>
+
+      <Tabs value="usuarios">
+        <TabsList>
+          <TabsTrigger value="usuarios" asChild>
+            <Link href="/admin/usuarios">Usuarios</Link>
+          </TabsTrigger>
+          <TabsTrigger value="roles" asChild>
+            <Link href="/admin/usuarios/roles">Roles</Link>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl">Usuarios</h1>
+        <h2 className="text-xl">Usuarios</h2>
         {isSuperAdmin && (
           <UserDialog trigger={<Button>+ Crear usuario</Button>} roles={roleOptions} />
         )}

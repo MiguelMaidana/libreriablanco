@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatPrice, formatDate } from "./format";
+import { formatPrice, formatDate, formatDateTime } from "./format";
 
 // Intl.NumberFormat("es-AR", { style: "currency" }) separa el simbolo del
 // monto con un espacio de no separacion (U+00A0), no un espacio normal.
@@ -26,5 +26,11 @@ describe("formatDate", () => {
     // formateador que use la zona horaria del servidor (UTC en
     // producción) mostraría 16/1 en lugar de 15/1.
     expect(formatDate("2026-01-16T01:30:00.000Z")).toBe("15/1/2026");
+  });
+});
+
+describe("formatDateTime", () => {
+  it("formatea fecha y hora en la zona horaria de Argentina, no en UTC", () => {
+    expect(formatDateTime("2026-01-16T01:30:00.000Z")).toBe("15/1/2026, 22:30");
   });
 });

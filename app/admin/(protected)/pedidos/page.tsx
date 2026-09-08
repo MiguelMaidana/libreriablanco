@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatPrice } from "@/lib/shop/format";
+import { formatPrice, formatDateTime } from "@/lib/shop/format";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_BADGE_VARIANT } from "@/lib/admin/orders";
 
 type OrderFilter = "nuevos" | "finalizados" | "cancelados" | "todos";
@@ -32,7 +32,9 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   const supabase = await createClient();
   let query = supabase
     .from("orders")
-    .select("id, order_number, status, total, customers(first_name, last_name), order_items(quantity)")
+    .select(
+      "id, order_number, status, total, created_at, customers(first_name, last_name), order_items(quantity)",
+    )
     .order("created_at", { ascending: false });
 
   if (filter !== "todos") {
@@ -91,6 +93,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                   <p className="text-sm text-muted-foreground">
                     {`${unitCount} producto${unitCount === 1 ? "" : "s"} · ${formatPrice(order.total)}`}
                   </p>
+                  <p className="text-sm text-muted-foreground">{formatDateTime(order.created_at)}</p>
                   <Badge variant={ORDER_STATUS_BADGE_VARIANT[order.status]} className="w-fit">
                     {ORDER_STATUS_LABEL[order.status]}
                   </Badge>

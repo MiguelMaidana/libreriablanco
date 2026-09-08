@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatPrice } from "@/lib/shop/format";
+import { formatPrice, formatDateTime } from "@/lib/shop/format";
 import { buildWhatsAppUrl } from "@/lib/shop/whatsapp";
 import { buildOrderContactMessage, normalizeArgentinePhone } from "@/lib/admin/whatsapp";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_BADGE_VARIANT } from "@/lib/admin/orders";
@@ -19,7 +19,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "id, order_number, status, total, customers(first_name, last_name, phone, email)",
+      "id, order_number, status, total, created_at, customers(first_name, last_name, phone, email)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -50,6 +50,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
       <h1 className="text-2xl">{`Pedido #${order.order_number}`}</h1>
+      <p className="text-sm text-muted-foreground">{formatDateTime(order.created_at)}</p>
 
       <section className="flex flex-col gap-1">
         <h2 className="font-semibold">Cliente</h2>

@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DeleteRoleButton } from "@/components/admin/delete-role-button";
 
 export default async function RolesPage() {
@@ -42,8 +43,21 @@ export default async function RolesPage() {
 
   return (
     <main className="flex flex-col gap-6 p-6">
+      <h1 className="text-2xl">Usuarios y Roles</h1>
+
+      <Tabs value="roles">
+        <TabsList>
+          <TabsTrigger value="usuarios" asChild>
+            <Link href="/admin/usuarios">Usuarios</Link>
+          </TabsTrigger>
+          <TabsTrigger value="roles" asChild>
+            <Link href="/admin/usuarios/roles">Roles</Link>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl">Roles</h1>
+        <h2 className="text-xl">Roles</h2>
         {isSuperAdmin && (
           <Button asChild>
             <Link href="/admin/usuarios/roles/nueva">+ Crear rol</Link>
