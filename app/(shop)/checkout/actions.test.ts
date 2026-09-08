@@ -17,6 +17,16 @@ vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: vi.fn(() => ({ from: mockServiceFrom, rpc: mockRpc })),
 }));
 
+const mockGetSettings = vi.fn();
+vi.mock("@/lib/shop/settings", () => ({
+  getSettings: () => mockGetSettings(),
+}));
+
+const mockSendOrderConfirmationEmail = vi.fn();
+vi.mock("@/lib/shop/email", () => ({
+  sendOrderConfirmationEmail: (...args: unknown[]) => mockSendOrderConfirmationEmail(...args),
+}));
+
 import { createOrder } from "./actions";
 
 function buildFormData(overrides: Record<string, string> = {}) {
@@ -41,6 +51,10 @@ describe("createOrder", () => {
     mockServiceSelect.mockClear();
     mockServiceIn.mockReset();
     mockRpc.mockReset();
+    mockGetSettings.mockReset();
+    mockGetSettings.mockResolvedValue(null);
+    mockSendOrderConfirmationEmail.mockReset();
+    mockSendOrderConfirmationEmail.mockResolvedValue(undefined);
   });
 
   it("devuelve error de validación si falta el email", async () => {
@@ -112,6 +126,59 @@ describe("createOrder", () => {
       error: null,
     });
     mockRpc.mockResolvedValue({ data: [{ order_number: "LB-1000" }], error: null });
+
+    const result = await createOrder({ error: null, orderNumber: null }, buildFormData());
+
+    expect(result).toEqual({ error: null, orderNumber: "LB-1000" });
+  });
+
+  it("manda el email de confirmación con los datos del pedido y el email de notificación de settings", async () => {
+    mockAnonIn.mockResolvedValue({ data: [{ id: "p1", price: 999 }], error: null });
+    mockServiceIn.mockResolvedValue({
+      data: [{ id: "p1", name: "Cuaderno A4", sku: "CUA-001", cost: 500 }],
+      error: null,
+    });
+    mockRpc.mockResolvedValue({ data: [{ order_number: "LB-1000" }], error: null });
+    mockGetSettings.mockResolvedValue({
+      transfer_alias: "libreria.blanco",
+      transfer_cbu_cvu: null,
+      transfer_bank_or_wallet: null,
+      transfer_account_holder: null,
+      transfer_instructions: null,
+      address: null,
+      business_hours: null,
+      pickup_instructions_text: null,
+      email: "libreria@example.com",
+    });
+
+    await createOrder(
+      { error: null, orderNumber: null },
+      buildFormData({ items: JSON.stringify([{ productId: "p1", quantity: 2 }]) }),
+    );
+
+    expect(mockSendOrderConfirmationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderNumber: "LB-1000",
+        customerName: "Ana Pérez",
+        customerEmail: "ana@example.com",
+        items: [{ name: "Cuaderno A4", quantity: 2, unitPrice: 999, subtotal: 1998 }],
+        total: 1998,
+        settings: expect.objectContaining({
+          transferAlias: "libreria.blanco",
+          notificationEmail: "libreria@example.com",
+        }),
+      }),
+    );
+  });
+
+  it("no falla el pedido si el envío del email de confirmación falla", async () => {
+    mockAnonIn.mockResolvedValue({ data: [{ id: "p1", price: 999 }], error: null });
+    mockServiceIn.mockResolvedValue({
+      data: [{ id: "p1", name: "Cuaderno A4", sku: "CUA-001", cost: 500 }],
+      error: null,
+    });
+    mockRpc.mockResolvedValue({ data: [{ order_number: "LB-1000" }], error: null });
+    mockSendOrderConfirmationEmail.mockRejectedValue(new Error("email down"));
 
     const result = await createOrder({ error: null, orderNumber: null }, buildFormData());
 

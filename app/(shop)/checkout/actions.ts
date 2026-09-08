@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkoutSchema } from "@/lib/validations/checkout";
+import { getSettings } from "@/lib/shop/settings";
+import { sendOrderConfirmationEmail } from "@/lib/shop/email";
 
 export interface CheckoutActionState {
   error: string | null;
@@ -94,5 +96,42 @@ export async function createOrder(
     return { error: GENERIC_ERROR, orderNumber: null };
   }
 
-  return { error: null, orderNumber: rpcResult[0]!.order_number };
+  const orderNumber = rpcResult[0]!.order_number;
+
+  // El pedido ya está creado en este punto — un fallo al mandar el email de
+  // confirmación (sendOrderConfirmationEmail nunca lanza, ver lib/shop/email.ts)
+  // nunca debe hacer que el checkout falle ni que se pierda el pedido.
+  const settings = await getSettings();
+  const emailItems = orderItems.map((item) => ({
+    name: item.product_name,
+    quantity: item.quantity,
+    unitPrice: item.unit_price,
+    subtotal: item.unit_price * item.quantity,
+  }));
+  const total = emailItems.reduce((sum, item) => sum + item.subtotal, 0);
+
+  try {
+    await sendOrderConfirmationEmail({
+      orderNumber,
+      customerName: `${firstName} ${lastName}`,
+      customerEmail: email,
+      items: emailItems,
+      total,
+      settings: {
+        transferAlias: settings?.transfer_alias ?? null,
+        transferCbuCvu: settings?.transfer_cbu_cvu ?? null,
+        transferBankOrWallet: settings?.transfer_bank_or_wallet ?? null,
+        transferAccountHolder: settings?.transfer_account_holder ?? null,
+        transferInstructions: settings?.transfer_instructions ?? null,
+        address: settings?.address ?? null,
+        businessHours: settings?.business_hours ?? null,
+        pickupInstructions: settings?.pickup_instructions_text ?? null,
+        notificationEmail: settings?.email ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("createOrder: error sending order confirmation email", error);
+  }
+
+  return { error: null, orderNumber };
 }
