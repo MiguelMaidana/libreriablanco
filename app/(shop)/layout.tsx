@@ -3,16 +3,25 @@ import { Header } from "@/components/shop/header";
 import { Footer } from "@/components/shop/footer";
 import { WhatsAppFloatingButton } from "@/components/shop/whatsapp-floating-button";
 import { CartProvider } from "@/components/shop/cart-provider";
+import { createClient } from "@/lib/supabase/server";
 import { getSettings } from "@/lib/shop/settings";
 
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {
-  const settings = await getSettings();
+  const supabase = await createClient();
+  const [settings, { data: categories }] = await Promise.all([
+    getSettings(),
+    supabase
+      .from("categories")
+      .select("id, name, slug")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true }),
+  ]);
 
   return (
     <CartProvider>
       <div className="flex min-h-screen flex-col">
         <InfoBar storeEnabled={settings?.store_enabled ?? true} />
-        <Header logoUrl={settings?.logo_url ?? null} />
+        <Header logoUrl={settings?.logo_url ?? null} categories={categories ?? []} />
         <main className="flex-1">{children}</main>
         <Footer
           settings={{
