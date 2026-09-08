@@ -7,6 +7,14 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // Migrar a un remitente con dominio propio una vez que la librería tenga uno.
 const FROM_ADDRESS = "Librería Blanco <onboarding@resend.dev>";
 
+// Sin dominio propio verificado, la cuenta de Resend en uso solo puede
+// mandar a su propia casilla registrada — nunca a un cliente real. Hasta
+// que se verifique un dominio, el mail al cliente queda desactivado (el
+// cliente igual ve el resumen completo en /compra-exitosa) y solo se manda
+// la copia interna a `settings.email` (que sí coincide con esa casilla).
+// Reactivar en cuanto haya un dominio propio verificado en Resend.
+const CUSTOMER_EMAIL_ENABLED = false;
+
 // Mismos colores que app/globals.css (--primary) y el footer del sitio.
 const BRAND_RED = "#dc2626";
 const FOOTER_DARK = "#1f1f1f";
@@ -48,13 +56,14 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function buildOrderEmailHtml({
-  orderNumber,
-  customerName,
-  items,
-  total,
-  settings,
-}: SendOrderConfirmationEmailParams): string {
+function buildOrderEmailHtml(
+  { orderNumber, customerName, items, total, settings }: SendOrderConfirmationEmailParams,
+  audience: "customer" | "internal",
+): string {
+  const heading =
+    audience === "internal"
+      ? `¡Recibiste un pedido de ${escapeHtml(customerName)}!`
+      : `¡Gracias por tu compra, ${escapeHtml(customerName)}!`;
   const itemsRows = items
     .map(
       (item) => `
@@ -119,7 +128,7 @@ function buildOrderEmailHtml({
                 <table role="presentation" width="100%">
                   <tr>
                     <td>
-                      <h1 style="font-size:18px;margin:0 0 4px 0;color:#111;">¡Gracias por tu compra, ${escapeHtml(customerName)}!</h1>
+                      <h1 style="font-size:18px;margin:0 0 4px 0;color:#111;">${heading}</h1>
                       <p style="margin:0 0 20px 0;color:#555;font-size:14px;">Pedido <strong>${escapeHtml(orderNumber)}</strong></p>
                     </td>
                   </tr>
@@ -154,21 +163,20 @@ function buildOrderEmailHtml({
 }
 
 export async function sendOrderConfirmationEmail(params: SendOrderConfirmationEmailParams): Promise<void> {
-  const html = buildOrderEmailHtml(params);
-  const subject = `Confirmación de tu pedido ${params.orderNumber}`;
-
-  try {
-    const { error } = await resend.emails.send({
-      from: FROM_ADDRESS,
-      to: [params.customerEmail],
-      subject,
-      html,
-    });
-    if (error) {
-      console.error("sendOrderConfirmationEmail: Resend returned an error", error);
+  if (CUSTOMER_EMAIL_ENABLED) {
+    try {
+      const { error } = await resend.emails.send({
+        from: FROM_ADDRESS,
+        to: [params.customerEmail],
+        subject: `Confirmación de tu pedido ${params.orderNumber}`,
+        html: buildOrderEmailHtml(params, "customer"),
+      });
+      if (error) {
+        console.error("sendOrderConfirmationEmail: Resend returned an error", error);
+      }
+    } catch (error) {
+      console.error("sendOrderConfirmationEmail: error sending customer email", error);
     }
-  } catch (error) {
-    console.error("sendOrderConfirmationEmail: error sending customer email", error);
   }
 
   if (!params.settings.notificationEmail) {
@@ -179,8 +187,8 @@ export async function sendOrderConfirmationEmail(params: SendOrderConfirmationEm
     const { error } = await resend.emails.send({
       from: FROM_ADDRESS,
       to: [params.settings.notificationEmail],
-      subject: `Nuevo pedido ${params.orderNumber}`,
-      html,
+      subject: `Recibiste un pedido — ${params.orderNumber}`,
+      html: buildOrderEmailHtml(params, "internal"),
     });
     if (error) {
       console.error("sendOrderConfirmationEmail: Resend returned an error (copia interna)", error);

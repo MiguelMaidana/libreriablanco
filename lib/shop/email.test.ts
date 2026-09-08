@@ -37,13 +37,25 @@ describe("sendOrderConfirmationEmail", () => {
     mockSend.mockResolvedValue({ data: { id: "email-1" }, error: null });
   });
 
-  it("envía un email al cliente con el número de pedido y el total", async () => {
+  // El envío al cliente está desactivado (CUSTOMER_EMAIL_ENABLED = false en
+  // email.ts) hasta que se verifique un dominio propio en Resend — sin eso,
+  // Resend solo entrega a la casilla de la cuenta, nunca a un cliente real.
+  it("no manda nada si no hay email de notificación configurado (envío al cliente desactivado)", async () => {
     await sendOrderConfirmationEmail(baseParams);
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it("manda solo la copia interna cuando hay un email de notificación configurado", async () => {
+    await sendOrderConfirmationEmail({
+      ...baseParams,
+      settings: { ...baseParams.settings, notificationEmail: "libreria@example.com" },
+    });
 
     expect(mockSend).toHaveBeenCalledTimes(1);
     const call = mockSend.mock.calls[0]![0];
-    expect(call.to).toEqual(["ana@example.com"]);
+    expect(call.to).toEqual(["libreria@example.com"]);
     expect(call.subject).toContain("LB-1000");
+    expect(call.html).toContain("Recibiste un pedido de Ana Pérez");
     expect(call.html).toContain("LB-1000");
     expect(call.html).toContain("Cuaderno A4");
     expect(call.html).toContain("Tijera");
@@ -54,6 +66,7 @@ describe("sendOrderConfirmationEmail", () => {
       ...baseParams,
       customerName: "<script>alert(1)</script>",
       items: [{ name: "<b>Producto</b>", quantity: 1, unitPrice: 100, subtotal: 100 }],
+      settings: { ...baseParams.settings, notificationEmail: "libreria@example.com" },
     });
 
     const call = mockSend.mock.calls[0]![0];
@@ -67,6 +80,7 @@ describe("sendOrderConfirmationEmail", () => {
       ...baseParams,
       settings: {
         ...baseParams.settings,
+        notificationEmail: "libreria@example.com",
         transferAlias: "libreria.blanco",
         transferCbuCvu: "0000003100012345678901",
         address: "Murguiondo 4230",
@@ -83,30 +97,23 @@ describe("sendOrderConfirmationEmail", () => {
     expect(call.html).toContain("Tocar timbre en la puerta lateral.");
   });
 
-  it("no manda una segunda copia si no hay email de notificación configurado", async () => {
-    await sendOrderConfirmationEmail(baseParams);
-    expect(mockSend).toHaveBeenCalledTimes(1);
-  });
-
-  it("manda una copia interna cuando hay un email de notificación configurado", async () => {
-    await sendOrderConfirmationEmail({
-      ...baseParams,
-      settings: { ...baseParams.settings, notificationEmail: "libreria@example.com" },
-    });
-
-    expect(mockSend).toHaveBeenCalledTimes(2);
-    const internalCall = mockSend.mock.calls[1]![0];
-    expect(internalCall.to).toEqual(["libreria@example.com"]);
-    expect(internalCall.subject).toContain("LB-1000");
-  });
-
   it("no lanza si Resend devuelve un error", async () => {
     mockSend.mockResolvedValue({ data: null, error: { message: "boom" } });
-    await expect(sendOrderConfirmationEmail(baseParams)).resolves.not.toThrow();
+    await expect(
+      sendOrderConfirmationEmail({
+        ...baseParams,
+        settings: { ...baseParams.settings, notificationEmail: "libreria@example.com" },
+      }),
+    ).resolves.not.toThrow();
   });
 
   it("no lanza si Resend rechaza la promesa", async () => {
     mockSend.mockRejectedValue(new Error("network error"));
-    await expect(sendOrderConfirmationEmail(baseParams)).resolves.not.toThrow();
+    await expect(
+      sendOrderConfirmationEmail({
+        ...baseParams,
+        settings: { ...baseParams.settings, notificationEmail: "libreria@example.com" },
+      }),
+    ).resolves.not.toThrow();
   });
 });
