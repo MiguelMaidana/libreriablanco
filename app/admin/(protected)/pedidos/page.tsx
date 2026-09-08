@@ -5,16 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatPrice, formatDateTime } from "@/lib/shop/format";
-import { ORDER_STATUS_LABEL, ORDER_STATUS_BADGE_VARIANT } from "@/lib/admin/orders";
+import {
+  ORDER_STATUS_LABEL,
+  ORDER_STATUS_BADGE_VARIANT,
+  STATUS_BY_FILTER,
+  type OrderFilter,
+} from "@/lib/admin/orders";
+import { DATE_FILTERS, getDateRangeForFilter, type DateFilter } from "@/lib/admin/date-ranges";
 import { ViewGuardMessage } from "@/components/admin/view-guard-message";
-
-type OrderFilter = "nuevos" | "finalizados" | "cancelados" | "todos";
-
-const STATUS_BY_FILTER: Record<Exclude<OrderFilter, "todos">, string> = {
-  nuevos: "NEW",
-  finalizados: "COMPLETED",
-  cancelados: "CANCELLED",
-};
 
 const EMPTY_MESSAGE_BY_FILTER: Record<OrderFilter, string> = {
   nuevos: "No hay pedidos nuevos por el momento.",
@@ -24,7 +22,7 @@ const EMPTY_MESSAGE_BY_FILTER: Record<OrderFilter, string> = {
 };
 
 interface OrdersPageProps {
-  searchParams: Promise<{ filtro?: string }>;
+  searchParams: Promise<{ filtro?: string; fecha?: string }>;
 }
 
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
@@ -36,8 +34,10 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     return <ViewGuardMessage title="Pedidos" message="No tenés permiso para ver esta página." />;
   }
 
-  const { filtro } = await searchParams;
+  const { filtro, fecha } = await searchParams;
   const filter = (filtro as OrderFilter) ?? "nuevos";
+  const dateFilter = (fecha as DateFilter) ?? "todas";
+  const dateRange = getDateRangeForFilter(dateFilter);
 
   const supabase = await createClient();
   let query = supabase
@@ -51,6 +51,10 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     query = query.eq("status", STATUS_BY_FILTER[filter]);
   }
 
+  if (dateRange) {
+    query = query.gte("created_at", dateRange.from).lt("created_at", dateRange.to);
+  }
+
   const { data: orders, error } = await query;
 
   if (error) {
@@ -61,22 +65,41 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
   return (
     <main className="flex flex-col gap-6 p-6">
-      <h1 className="text-2xl">Pedidos</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl">Pedidos</h1>
+        <Button asChild variant="outline">
+          <a href={`/admin/pedidos/export?filtro=${filter}&fecha=${dateFilter}`}>
+            Exportar a Excel
+          </a>
+        </Button>
+      </div>
 
       <Tabs value={filter}>
         <TabsList>
           <TabsTrigger value="nuevos" asChild>
-            <Link href="/admin/pedidos?filtro=nuevos">Nuevos</Link>
+            <Link href={`/admin/pedidos?filtro=nuevos&fecha=${dateFilter}`}>Nuevos</Link>
           </TabsTrigger>
           <TabsTrigger value="finalizados" asChild>
-            <Link href="/admin/pedidos?filtro=finalizados">Finalizados</Link>
+            <Link href={`/admin/pedidos?filtro=finalizados&fecha=${dateFilter}`}>Finalizados</Link>
           </TabsTrigger>
           <TabsTrigger value="cancelados" asChild>
-            <Link href="/admin/pedidos?filtro=cancelados">Cancelados</Link>
+            <Link href={`/admin/pedidos?filtro=cancelados&fecha=${dateFilter}`}>Cancelados</Link>
           </TabsTrigger>
           <TabsTrigger value="todos" asChild>
-            <Link href="/admin/pedidos?filtro=todos">Todos</Link>
+            <Link href={`/admin/pedidos?filtro=todos&fecha=${dateFilter}`}>Todos</Link>
           </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <Tabs value={dateFilter}>
+        <TabsList>
+          {DATE_FILTERS.map((option) => (
+            <TabsTrigger key={option.value} value={option.value} asChild>
+              <Link href={`/admin/pedidos?filtro=${filter}&fecha=${option.value}`}>
+                {option.label}
+              </Link>
+            </TabsTrigger>
+          ))}
         </TabsList>
       </Tabs>
 
